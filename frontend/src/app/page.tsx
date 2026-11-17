@@ -112,7 +112,8 @@ export default function Home() {
   // 2. Fetch Schemes, Recommendations & Analytics
   const loadData = useCallback(async (currentProf: FounderProfile) => {
     setLoading(true);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+    const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+    const apiUrl = rawApiUrl.replace(/\/$/, "");
 
     try {
       // A. Fetch All Schemes

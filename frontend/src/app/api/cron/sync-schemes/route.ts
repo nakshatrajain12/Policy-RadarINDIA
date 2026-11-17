@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
     let backendSyncResult: any = null;
 
     // 1. Trigger FastAPI backend sync if API URL is configured
-    const backendApiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_API_URL;
+    const rawBackendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_API_URL;
+    const backendApiUrl = rawBackendUrl ? rawBackendUrl.replace(/\/$/, "") : null;
     if (backendApiUrl && !backendApiUrl.includes("localhost") && !backendApiUrl.includes("127.0.0.1")) {
       try {
         const backendRes = await fetch(`${backendApiUrl}/pipeline/run-daily-sync`, {

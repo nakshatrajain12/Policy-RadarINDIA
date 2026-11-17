@@ -396,8 +396,12 @@ export default function Home() {
   const handleLogout = async () => {
     localStorage.removeItem("dummy_user");
     localStorage.removeItem("founder_profile");
-    await supabase.auth.signOut();
-    router.push("/login");
+    localStorage.removeItem("profile_customized");
+    document.cookie = "govdash_session=; path=/; max-age=0; SameSite=Lax";
+    try {
+      await supabase.auth.signOut();
+    } catch {}
+    window.location.href = "/login";
   };
 
   if (!mounted) {

@@ -1,5 +1,10 @@
 # Environments
 .env
+.env*
+.env.local
+venv/
+node_modules/
+
 
 # Cache and build directories
 __pycache__/

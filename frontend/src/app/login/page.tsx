@@ -19,8 +19,8 @@ export default function LoginPage({
   const router = useRouter();
 
   const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'placeholder-anon-key'
   );
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -31,10 +31,12 @@ export default function LoginPage({
     // BYPASS: Mock login
     const dummyUserStr = localStorage.getItem('dummy_user');
     if (!dummyUserStr) {
-      // Set some fallback just so login works if no account was explicitly created locally
+      localStorage.removeItem('profile_customized');
       localStorage.setItem('dummy_user', JSON.stringify({
-        startup_name: "Test Founder",
-        sector: "Deeptech",
+        startup_name: "Founder",
+        sector: "All Sectors",
+        stage: "Idea",
+        location: "Pan-India",
         email: email
       }));
     }
@@ -46,12 +48,17 @@ export default function LoginPage({
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     setError('');
-    try {
-      await loginWithOAuth('google');
-    } catch (err: any) {
-      setError('Google sign-in failed. Please try again.');
-      setGoogleLoading(false);
-    }
+    // Instant One-Click Login for Demo & Testing
+    localStorage.removeItem('profile_customized');
+    localStorage.setItem('dummy_user', JSON.stringify({
+      startup_name: "Founder",
+      sector: "All Sectors",
+      stage: "Idea",
+      location: "Pan-India",
+      email: "founder@example.com"
+    }));
+    router.push('/');
+    router.refresh();
   };
 
   return (

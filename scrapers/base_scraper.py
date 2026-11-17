@@ -7,10 +7,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-supabase: Client = create_client(
-    os.environ.get("SUPABASE_URL"),
-    os.environ.get("SUPABASE_KEY")
-)
+_supabase_url = os.environ.get("SUPABASE_URL")
+_supabase_key = os.environ.get("SUPABASE_KEY")
+supabase: Client = None
+if _supabase_url and _supabase_key:
+    try:
+        supabase = create_client(_supabase_url, _supabase_key)
+    except Exception as e:
+        print(f"[BASE_SCRAPER] Supabase initialization skipped: {e}")
+
 
 def compute_hash(data: dict) -> str:
     stringified = json.dumps(data, sort_keys=True)

@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], weight: ["300", "400", "500", "600"], variable: "--font-inter" });
-const manrope = Manrope({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-manrope" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
 
 export const metadata: Metadata = {
-  title: "GOV-DASH — Policy Intelligence",
-  description: "AI-powered startup policy intelligence dashboard — discover government schemes, grants, and funding opportunities tailored for your startup.",
+  title: "GOV-DASH — Policy Radar India | Startup Policy & Scheme Intelligence",
+  description: "Discover, evaluate, and unlock 193+ verified central and state government startup schemes, non-dilutive grants, and subsidies tailored to your startup.",
 };
 
 export default function RootLayout({
@@ -16,11 +16,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-          rel="stylesheet"
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var theme = localStorage.getItem('govdash_theme') || localStorage.getItem('theme');
+                if (theme === 'light') {
+                  document.documentElement.classList.remove('dark');
+                } else {
+                  document.documentElement.classList.add('dark');
+                }
+              } catch (e) {}
+            `,
+          }}
         />
       </head>
       <body className={`${inter.variable} ${manrope.variable} font-sans antialiased`} suppressHydrationWarning>

@@ -1,9 +1,35 @@
 import os
 import time
+import httpx
 from google import genai
 from dotenv import load_dotenv
 
 load_dotenv()
+
+def _call_groq(prompt: str, json_mode: bool = False) -> str:
+    """Ultra-fast fallback LLM inference using Groq."""
+    groq_key = os.environ.get("GROQ_API_KEY")
+    if not groq_key:
+        raise ValueError("No GROQ_API_KEY configured.")
+    headers = {
+        "Authorization": f"Bearer {groq_key}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "qwen/qwen3.8-27b",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.2
+    }
+    if json_mode:
+        payload["response_format"] = {"type": "json_object"}
+    res = httpx.post(
+        "https://api.groq.com/openai/v1/chat/completions",
+        headers=headers,
+        json=payload,
+        timeout=30.0
+    )
+    res.raise_for_status()
+    return res.json()["choices"][0]["message"]["content"]
 
 # ═══════════════════════════════════════════════════
 # MULTI-KEY ROTATION WITH AUTO-FAILOVER
@@ -23,8 +49,6 @@ def _load_api_keys():
         k = os.environ.get(f"GEMINI_API_KEY_{i}")
         if k:
             keys.append(k)
-    if not keys:
-        raise ValueError("No GEMINI_API_KEY found in environment!")
     return keys
 
 API_KEYS = _load_api_keys()
@@ -33,6 +57,8 @@ _current_key_index = 0
 def _get_client():
     """Get a genai Client using the current key."""
     global _current_key_index
+    if not API_KEYS:
+        raise ValueError("No GEMINI_API_KEY found in environment! Please add it to your .env file.")
     key = API_KEYS[_current_key_index % len(API_KEYS)]
     return genai.Client(api_key=key)
 
@@ -87,8 +113,11 @@ def _call_gemini(prompt: str, json_mode: bool = False, max_retries: int = 3):
             else:
                 # Non-quota error: simple backoff
                 if attempt < max_retries * total_keys - 1:
-                    time.sleep(5 * (attempt + 1))
+                    time.sleep(2 * (attempt + 1))
                 else:
+                    if os.environ.get("GROQ_API_KEY"):
+                        print(f"[LLM] Gemini attempt failed, falling back to Groq: {e}")
+                        return _call_groq(prompt, json_mode)
                     raise e
 
 

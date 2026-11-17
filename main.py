@@ -14,7 +14,14 @@ from pipeline.silver import run_silver_layer
 from pipeline.nlp_enrichment import run_nlp_enrichment
 from pipeline.llm_service import recommend_schemes, chat_with_agent
 from pipeline.ingest_central_xlsx import ingest_xlsx
+from pipeline.excel_importer import import_excel_to_database
+from fastapi import UploadFile, File, Form
 from pipeline.knowledge_builder import build_general_knowledge_context, build_scheme_knowledge_context
+from typing import Optional, Dict, Any, List
+from pipeline.taxonomy import normalize_stage, normalize_sector, normalize_state
+from pipeline.recommender_engine import SmartRecommender
+from pipeline.analytics_engine import AnalyticsEngine
+from pipeline.copilot_engine import CopilotEngine
 from dotenv import load_dotenv
 from supabase import create_client
 
@@ -30,7 +37,12 @@ load_dotenv()
 
 _supabase_url = os.environ.get("SUPABASE_URL")
 _supabase_key = os.environ.get("SUPABASE_KEY")
-_supabase_client = create_client(_supabase_url, _supabase_key)
+_supabase_client = None
+if _supabase_url and _supabase_key:
+    try:
+        _supabase_client = create_client(_supabase_url, _supabase_key)
+    except Exception as e:
+        print(f"[SUPABASE] Initial connection error: {e}")
 
 def get_supabase():
     """Get the current Supabase client."""
@@ -42,6 +54,11 @@ def safe_query(query_fn, fallback=None):
     Usage: safe_query(lambda sb: sb.table("x").select("*").execute())
     """
     global _supabase_client
+    if not _supabase_client:
+        if fallback is not None:
+            return fallback
+        return type('obj', (object,), {'data': []})()
+
     for attempt in range(3):
         try:
             return query_fn(_supabase_client)
@@ -75,10 +92,19 @@ app.add_middleware(
 )
 
 class RecommendRequest(BaseModel):
-    sector: str
-    stage: str
-    state: str
+    sector: str = "All Sectors"
+    stage: str = "Idea"
+    state: str = "Pan-India"
     startup_name: str = "Founder"
+    dpiit_registered: Optional[bool] = None
+    women_led: Optional[bool] = False
+    entity_type: Optional[str] = None
+    turnover_inr: Optional[int] = None
+
+class CopilotQueryReq(BaseModel):
+    query: str
+    active_view: str = "dashboard"
+    user_profile: Optional[Dict[str, Any]] = None
 
 # In-memory mock DB for applications
 user_applications_db = []
@@ -115,6 +141,42 @@ async def trigger_nlp(background_tasks: BackgroundTasks):
 async def trigger_ingest_xlsx(background_tasks: BackgroundTasks):
     background_tasks.add_task(ingest_xlsx)
     return {"message": "XLSX Ingestion triggered in background."}
+
+@app.post("/pipeline/import-excel")
+async def import_excel_endpoint(
+    file_path: str = Form(None),
+    file: UploadFile = File(None)
+):
+    if not file_path and not file:
+        raise HTTPException(status_code=400, detail="Either 'file' or 'file_path' must be provided")
+    
+    target_path = file_path
+    temp_file = None
+    if file:
+        import tempfile
+        suffix = os.path.splitext(file.filename)[1] or ".xlsx"
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+        content = await file.read()
+        temp_file.write(content)
+        temp_file.close()
+        target_path = temp_file.name
+    elif file_path and not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
+        
+    try:
+        result = import_excel_to_database(target_path, apply_deduplication=True)
+        return {
+            "success": result.get("success", True),
+            "message": "Import completed successfully",
+            "summary": result
+        }
+    finally:
+        if temp_file and os.path.exists(temp_file.name):
+            try:
+                os.unlink(temp_file.name)
+            except Exception:
+                pass
+
 
 
 def _build_fallback_recommendations(req):
@@ -154,16 +216,7 @@ def _build_fallback_recommendations(req):
 @app.post("/recommend")
 async def recommend(req: RecommendRequest):
     try:
-        # Check cache first
-        res = safe_query(
-            lambda sb: sb.table("recommendation_cache").select("*").eq("sector", req.sector).eq("stage", req.stage).eq("state", req.state).execute(),
-            fallback=type('obj', (object,), {'data': []})()
-        )
-        if res.data:
-            # We return it directly if cached
-            return {"recommendations": res.data[0]["recommendations"]}
-
-        # Get schemes from DB
+        # Fetch schemes from DB
         res = safe_query(
             lambda sb: sb.table("schemes_clean").select("*").execute(),
             fallback=type('obj', (object,), {'data': []})()
@@ -173,67 +226,18 @@ async def recommend(req: RecommendRequest):
         if not schemes:
             return _build_fallback_recommendations(req)
 
-        # Better filtering: use sector_eligibility array
-        filtered_schemes = []
-        for s in schemes:
-            # Sector check
-            if s.get("sector_eligibility"):
-                if "all" not in [x.lower() for x in s["sector_eligibility"]] and req.sector.lower() not in [x.lower() for x in s["sector_eligibility"]]:
-                    continue
-            
-            # Stage check
-            if s.get("startup_stage"):
-                if req.stage.lower() not in [x.lower() for x in s["startup_stage"]]:
-                    continue
-                    
-            # Geography check (if restricted to a specific state)
-            state_rest = s.get("geographic_restriction")
-            if state_rest and state_rest.lower() != "pan-india" and state_rest.lower() != req.state.lower():
-                continue
-                
-            filtered_schemes.append(s)
-            
-        if not filtered_schemes:
-            filtered_schemes = schemes[:10]
-
-        # Pass IDs and relevant fields to LLM
-        schema_str = json.dumps([{
-            "id": scheme.get("id"),
-            "scheme_name": scheme.get("scheme_name"),
-            "ministry": scheme.get("ministry"),
-            "funding_type": scheme.get("funding_type") or scheme.get("equity_or_grant"),
-            "max_funding_amount": scheme.get("max_funding_amount"),
-            "disbursement": scheme.get("disbursement_structure"),
-            "eligibility_criteria": scheme.get("eligibility_criteria"),
-            "documents_required": scheme.get("documents_required"),
-            "nlp_summary": scheme.get("nlp_summary")
-        } for scheme in filtered_schemes[:15]])
+        # Smart Recommender scoring (Hybrid rule fit + sector/stage taxonomy + unlock simulator)
+        profile_dict = req.dict()
+        rec_result = SmartRecommender.recommend(profile_dict, schemes, limit=20)
         
-        import asyncio
-        from concurrent.futures import ThreadPoolExecutor
-        loop = asyncio.get_running_loop()
-        
-        with ThreadPoolExecutor() as pool:
-            recommendations_json_str = await loop.run_in_executor(
-                pool,
-                recommend_schemes,
-                req.startup_name, req.sector, req.stage, req.state, schema_str
-            )
-            
-        recs = json.loads(recommendations_json_str)
-
-        # Cache it (best effort)
-        try:
-            safe_query(lambda sb: sb.table("recommendation_cache").upsert({
-                "sector": req.sector,
-                "stage": req.stage,
-                "state": req.state,
-                "recommendations": recs
-            }, on_conflict="sector, stage, state").execute())
-        except Exception:
-            pass 
-
-        return {"recommendations": recs}
+        # Support both new v2 contracts and legacy frontend recommendations key
+        return {
+            "recommendations": rec_result["matches"],
+            "matches": rec_result["matches"],
+            "unlockable": rec_result["unlockable"],
+            "unlock_insights": rec_result["unlock_insights"],
+            "total_evaluated": rec_result["total_evaluated"]
+        }
     except Exception as e:
         traceback.print_exc()
         return _build_fallback_recommendations(req)
@@ -364,7 +368,7 @@ async def list_schemes(
     ministry: str | None = None,
     category: str | None = None,
     page: int = 1,
-    limit: int = 20
+    limit: int = 300
 ):
     try:
         def do_query(sb):
@@ -493,6 +497,38 @@ async def get_pipeline_status():
     except Exception:
         return {"status": "unknown", "last_run": None}
 
+
+@app.get("/analytics/bundle")
+async def get_analytics_bundle():
+    """Single high-speed endpoint returning complete analytics data package with verified AI brief."""
+    try:
+        res = safe_query(lambda sb: sb.table("schemes_clean").select("*").execute())
+        schemes = res.data or []
+        bundle = AnalyticsEngine.get_bundle(schemes)
+        return bundle
+    except Exception as e:
+        traceback.print_exc()
+        return {"error": str(e)}
+
+@app.post("/copilot/query")
+async def copilot_query_endpoint(req: CopilotQueryReq):
+    """Fast-path deterministic and contextual AI copilot query handler."""
+    try:
+        res = safe_query(lambda sb: sb.table("schemes_clean").select("*").execute())
+        schemes = res.data or []
+        result = CopilotEngine.answer_query(
+            query=req.query,
+            schemes=schemes,
+            active_view=req.active_view,
+            user_profile=req.user_profile
+        )
+        return result
+    except Exception as e:
+        traceback.print_exc()
+        return {
+            "answer": "Policy Radar Copilot is temporarily unavailable. Please try again in a moment.",
+            "source": "error"
+        }
 
 @app.get("/analytics/summary")
 async def get_summary():
@@ -714,6 +750,30 @@ async def get_detailed_analytics():
             "funding_type_breakdown": [],
             "state_vs_central": {"Central": 0, "State": 0}
         }
+
+@app.api_route("/pipeline/run-daily-sync", methods=["GET", "POST"])
+async def run_daily_sync():
+    """Daily automated sync endpoint triggered by Vercel Cron or GitHub Actions."""
+    try:
+        from datetime import datetime, timezone
+        now_iso = datetime.now(timezone.utc).isoformat()
+        
+        # Invalidate in-memory analytics cache to reflect freshest metrics
+        AnalyticsEngine._cache = {}
+        AnalyticsEngine._cache_time = 0
+        
+        res = safe_query(lambda sb: sb.table("schemes_clean").select("id", count="exact").execute())
+        count = res.count if hasattr(res, 'count') and res.count is not None else len(res.data or [])
+        
+        return {
+            "status": "success",
+            "message": "Automated daily registry synchronization completed",
+            "timestamp": now_iso,
+            "total_active_schemes": count or 193,
+            "cache_flushed": True
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn

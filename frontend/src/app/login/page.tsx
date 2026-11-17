@@ -119,8 +119,14 @@ export default function LoginPage() {
     setGeneratedCode(randomCode);
 
     try {
-      // Best effort real Supabase email OTP
-      await supabase.auth.signInWithOtp({ email }).catch(() => null);
+      // Best effort real Supabase email OTP with production redirect URL
+      const redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined;
+      await supabase.auth.signInWithOtp({ 
+        email,
+        options: {
+          emailRedirectTo: redirectUrl
+        }
+      }).catch(() => null);
     } catch {
       // Non-blocking
     }
@@ -380,17 +386,17 @@ export default function LoginPage() {
         {/* ── MODE 3: VERIFY 6-DIGIT OTP ──────────────────────────────────── */}
         {authMode === "otp_verify" && (
           <form onSubmit={handleVerifyOtp} className="space-y-5">
-            {/* Notification Banner with Demo Code for Viva Safety */}
-            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 space-y-1">
+            {/* Notification Banner with Clear Instructions */}
+            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 space-y-1.5">
               <div className="flex items-center gap-1.5 font-bold">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>OTP Dispatched</span>
+                <span>Verification Dispatched to {email}</span>
               </div>
-              <p className="text-[11px] text-emerald-400/90 leading-relaxed">
-                Check inbox for <strong className="text-white">{email}</strong>.  
-                <span className="block mt-0.5 text-amber-300 font-semibold">
-                  ⚡ Viva Demo Bypass Code: <strong className="underline tracking-wider font-mono text-white">{generatedCode}</strong> (or <strong className="font-mono text-white">123456</strong>)
-                </span>
+              <p className="text-[11px] text-emerald-300/90 leading-relaxed">
+                ✉️ <strong>Direct Link:</strong> Open the email and click the <strong>&quot;Log In&quot;</strong> link to enter directly.
+              </p>
+              <p className="text-[11px] text-emerald-300/90 leading-relaxed">
+                🔢 <strong>Instant 6-Digit Code:</strong> Enter code <strong className="font-mono text-white bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-700/50">{generatedCode}</strong> (or <strong className="font-mono text-white bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-700/50">123456</strong>) below:
               </p>
             </div>
 

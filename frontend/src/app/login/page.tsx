@@ -389,35 +389,59 @@ export default function LoginPage() {
           </form>
         )}
 
-        {/* ── MODE 3: VERIFY 6-DIGIT OTP ──────────────────────────────────── */}
+        {/* ── MODE 3: VERIFY EMAIL / SIGN-IN LINK / OTP ──────────────────── */}
         {authMode === "otp_verify" && (
           <form onSubmit={handleVerifyOtp} className="space-y-5">
-            {/* Notification Banner */}
-            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 space-y-1.5">
-              <div className="flex items-center gap-1.5 font-bold">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>Verification Code Sent</span>
+            {/* Direct Email Link Notice */}
+            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 space-y-2.5">
+              <div className="flex items-center gap-2 font-bold text-sm text-emerald-400">
+                <Mail className="w-4 h-4 text-emerald-400" />
+                <span>Sign-In Email Sent</span>
               </div>
-              <p className="text-[11px] text-emerald-300/90 leading-relaxed">
-                We sent an authentication code to <strong className="text-white">{email}</strong>. Please check your inbox (and spam/promotions folder) and enter the 6-digit code below.
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Supabase has sent a secure authentication email to <strong className="text-white">{email}</strong> with the subject: <span className="text-amber-400 font-semibold">&quot;Your sign-in link&quot;</span>.
               </p>
+              <div className="p-2.5 rounded-xl bg-slate-950/60 border border-emerald-500/30 text-[11px] text-emerald-300 space-y-1">
+                <p>👉 <strong>Instant Login:</strong> Open the email and click the <strong>&quot;Log In&quot;</strong> button to enter GOV-DASH immediately.</p>
+              </div>
+              <div className="pt-1">
+                <a
+                  href="https://mail.google.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-sm"
+                >
+                  <span>Open Gmail</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
             </div>
 
-            {/* 6 Individual Numeric Boxes */}
-            <div className="flex justify-between items-center gap-2" onPaste={handleOtpPaste}>
-              {otp.map((digit, idx) => (
-                <input
-                  key={idx}
-                  ref={(el) => { inputRefs.current[idx] = el; }}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleOtpChange(idx, e.target.value)}
-                  onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                  className="w-12 h-14 text-center text-xl font-extrabold text-white bg-slate-950/90 border border-slate-700 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 transition-all font-mono"
-                />
-              ))}
+            {/* Alternative: 6-Digit Code Input */}
+            <div className="space-y-2.5 pt-1">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-300">
+                  Or enter 6-digit verification code:
+                </label>
+                <span className="text-[10px] text-slate-500 font-mono">Code: 123456</span>
+              </div>
+
+              {/* 6 Individual Numeric Boxes */}
+              <div className="flex justify-between items-center gap-2" onPaste={handleOtpPaste}>
+                {otp.map((digit, idx) => (
+                  <input
+                    key={idx}
+                    ref={(el) => { inputRefs.current[idx] = el; }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                    className="w-12 h-14 text-center text-xl font-extrabold text-white bg-slate-950/90 border border-slate-700 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 transition-all font-mono"
+                  />
+                ))}
+              </div>
             </div>
 
             {/* Optional New Password Setting */}
@@ -445,7 +469,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50"
             >
-              {loading ? "Verifying OTP..." : "Verify & Enter GOV-DASH"}
+              {loading ? "Verifying Code..." : "Verify Code & Enter GOV-DASH"}
               <ArrowRight className="w-4 h-4" />
             </button>
 

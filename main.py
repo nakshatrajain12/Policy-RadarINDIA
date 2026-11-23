@@ -200,47 +200,117 @@ async def import_excel_endpoint(
 
 def _build_fallback_recommendations(req):
     """Hardcoded fallback recommendations when LLM or DB is unavailable."""
+    matches = [
+        {
+            "id": "fallback-1",
+            "name": "Startup India Seed Fund Scheme (SISFS)",
+            "ministry": "DPIIT, Ministry of Commerce & Industry",
+            "reason": f"Highly relevant for {req.stage} stage startups in {req.sector}.",
+            "why_eligible_reasoning": f"Fits {req.stage} stage innovation criteria, provides non-dilutive prototype & commercialization funding.",
+            "match_score": 92,
+            "eligibility_score": 92,
+            "funding_type": "Capital Grant / Convertible Debt",
+            "max_funding_amount": 7000000,
+            "max_funding_display": "₹70.0 Lakhs",
+            "documents_checklist": ["DPIIT Registration", "Pitch Deck", "Bank Statements", "Founder KYC"],
+            "equity_type": "Grant",
+            "disbursement_structure": "Milestone-based (3 tranches)",
+            "deadline_status": "Open - Rolling Basis",
+            "action": "Apply via Startup India portal",
+            "application_url": "https://seedfund.startupindia.gov.in"
+        },
+        {
+            "id": "fallback-2",
+            "name": "MeitY TIDE 2.0 (G2-Tier Grant)",
+            "ministry": "Ministry of Electronics & Information Technology (MeitY)",
+            "reason": f"Dedicated funding for emerging tech innovations in {req.sector}.",
+            "why_eligible_reasoning": "Supports IoT, AI, and software validation through certified incubation centres.",
+            "match_score": 88,
+            "eligibility_score": 88,
+            "funding_type": "Prototype Grant",
+            "max_funding_amount": 700000,
+            "max_funding_display": "₹7.0 Lakhs",
+            "documents_checklist": ["Project Proposal", "Tech Architecture", "Incubator Endorsement"],
+            "equity_type": "Grant",
+            "disbursement_structure": "Tranches upon technical evaluation",
+            "deadline_status": "Open - Rolling Calls",
+            "action": "Contact local TIDE incubator",
+            "application_url": "https://www.meity.gov.in/content/tide-20"
+        },
+        {
+            "id": "fallback-3",
+            "name": "Credit Guarantee Scheme for Startups (CGSS)",
+            "ministry": "DPIIT + Dept. of Financial Services, Ministry of Finance",
+            "reason": "Provides collateral-free debt credit guarantees for scaling startups.",
+            "why_eligible_reasoning": "DPIIT recognized entity qualifies for 85% credit guarantee on working capital loans.",
+            "match_score": 85,
+            "eligibility_score": 85,
+            "funding_type": "Credit Guarantee",
+            "max_funding_amount": 20000000,
+            "max_funding_display": "₹2.00 Crore",
+            "documents_checklist": ["DPIIT Certificate", "Audited Financials", "Bank Project Report"],
+            "equity_type": "Debt Guarantee",
+            "disbursement_structure": "Bank term loan / credit line",
+            "deadline_status": "Open Year-Round",
+            "action": "Apply through partner scheduled banks",
+            "application_url": "https://www.startupindia.gov.in/content/sih/en/cgs.html"
+        },
+        {
+            "id": "fallback-4",
+            "name": "Atal Incubation Centres (AIC / AIM) Scale-Up Support",
+            "ministry": "Atal Innovation Mission (AIM), NITI Aayog",
+            "reason": "Residency and testing lab infrastructure with specialized mentoring.",
+            "why_eligible_reasoning": "Fast-tracks prototype validation with maker space access and seed investment committee.",
+            "match_score": 82,
+            "eligibility_score": 82,
+            "funding_type": "Incubation Residency & Seed",
+            "max_funding_amount": 5000000,
+            "max_funding_display": "₹50.0 Lakhs",
+            "documents_checklist": ["Pitch Deck", "Provisional IPR filing", "Founder KYC"],
+            "equity_type": "Incubator Seed",
+            "disbursement_structure": "Milestone-based",
+            "deadline_status": "Rolling Cohorts",
+            "action": "Apply to partner AIC incubator",
+            "application_url": "https://aim.gov.in/atal-incubation-centres.php"
+        },
+        {
+            "id": "fallback-5",
+            "name": "Scheme for Intellectual Property Protection (SIPP)",
+            "ministry": "CGPDTM, Ministry of Commerce & Industry",
+            "reason": "80% government statutory fee rebate on patents and 50% on trademark filings.",
+            "why_eligible_reasoning": "Direct statutory cost relief for early-stage IP-driven tech startups.",
+            "match_score": 80,
+            "eligibility_score": 80,
+            "funding_type": "Statutory Fee Subsidy",
+            "max_funding_amount": 250000,
+            "max_funding_display": "80% Fee Rebate",
+            "documents_checklist": ["DPIIT Certificate", "Patent Application Draft"],
+            "equity_type": "Fee Waiver",
+            "disbursement_structure": "Direct billing by empanelled facilitator",
+            "deadline_status": "Open Year-Round",
+            "action": "Select empanelled patent facilitator",
+            "application_url": "https://ipindia.gov.in"
+        }
+    ]
     return {
-        "recommendations": [
-            {
-                "scheme_id": "fallback-1",
-                "name": "Startup India Seed Fund Scheme",
-                "reason": f"Highly relevant for {req.stage} stage startups in {req.sector}.",
-                "why_eligible_reasoning": f"You are 90% eligible — Fits {req.stage} stage perfectly, needs DPIIT registration.",
-                "eligibility_score": 90,
-                "documents_checklist": ["DPIIT Registration", "Pitch Deck", "Bank Statements", "Founder KYC"],
-                "equity_type": "Grant",
-                "disbursement_structure": "Milestone-based (3 tranches)",
-                "deadline_status": "Open - Rolling Basis",
-                "action": "Apply via Startup India portal",
-                "application_url": "https://seedfund.startupindia.gov.in"
-            },
-            {
-                "scheme_id": "fallback-2",
-                "name": "MeitY TIDE 2.0 (G2-Tier)",
-                "reason": f"Dedicated funding for tech innovation in {req.state}.",
-                "why_eligible_reasoning": f"You are 75% eligible — Requires deep-tech focus. Missing working prototype details.",
-                "eligibility_score": 75,
-                "documents_checklist": ["Project Proposal", "Tech Architecture", "Voucher of Incubator Admission"],
-                "equity_type": "Grant / Equity",
-                "disbursement_structure": "Tranches upon technical evaluation",
-                "deadline_status": "Reopened - New Round",
-                "action": "Contact local TIDE incubator",
-                "application_url": "https://www.meity.gov.in/content/tide-20"
-            }
-        ]
+        "recommendations": matches,
+        "matches": matches,
+        "unlockable": [],
+        "unlock_insights": {
+            "dpiit_unlock_count": 0,
+            "dpiit_unlock_value_inr": 0,
+            "dpiit_unlock_value_display": "₹0",
+            "top_unlock_action": "Apply for Section 80-IAC 3-year income tax exemption"
+        },
+        "total_evaluated": len(matches)
     }
 
 
 @app.post("/recommend")
 async def recommend(req: RecommendRequest):
     try:
-        # Fetch schemes from DB
-        res = safe_query(
-            lambda sb: sb.table("schemes_clean").select("*").execute(),
-            fallback=type('obj', (object,), {'data': []})()
-        )
-        schemes = res.data or []
+        # Fetch schemes from DB or verified seed fallback
+        schemes = get_schemes_dataset()
         
         if not schemes:
             return _build_fallback_recommendations(req)

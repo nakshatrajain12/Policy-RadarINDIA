@@ -198,6 +198,19 @@ export default function Home() {
         try {
           const parsed = JSON.parse(savedProfile);
           setProfile(parsed);
+          setIntakeAnswers(prev => ({
+            ...prev,
+            startupName: parsed.startupName || prev.startupName,
+            sector: parsed.sector || prev.sector,
+            stage: parsed.stage || prev.stage,
+            state: parsed.state || prev.state,
+            womenLed: parsed.womenLed ?? prev.womenLed,
+            documentsHeld: [
+              ...(parsed.dpiitRegistered ? ["dpiit_cert"] : []),
+              ...(parsed.entityType === "private_limited" ? ["incorporation"] : []),
+              ...prev.documentsHeld.filter(d => d !== "dpiit_cert" && d !== "incorporation")
+            ]
+          }));
         } catch {}
       } else {
         const dummyUserStr = localStorage.getItem("dummy_user");
@@ -486,6 +499,22 @@ export default function Home() {
         currentProfile={profile}
         onSave={(updated) => {
           setProfile(updated);
+          setIntakeAnswers(prev => ({
+            ...prev,
+            startupName: updated.startupName || prev.startupName,
+            sector: updated.sector || prev.sector,
+            stage: updated.stage || prev.stage,
+            state: updated.state || prev.state,
+            womenLed: updated.womenLed ?? prev.womenLed,
+            documentsHeld: [
+              ...(updated.dpiitRegistered ? ["dpiit_cert"] : []),
+              ...(updated.entityType === "private_limited" ? ["incorporation"] : []),
+              ...prev.documentsHeld.filter(d => d !== "dpiit_cert" && d !== "incorporation")
+            ]
+          }));
+          try {
+            localStorage.setItem("founder_profile", JSON.stringify(updated));
+          } catch {}
         }}
       />
 
@@ -510,7 +539,24 @@ export default function Home() {
         profile={profile}
         unlockableSchemes={unlockable}
         onApplyProfileChange={(updated) => {
-          setProfile(prev => ({ ...prev, ...updated }));
+          const nextProf = { ...profile, ...updated };
+          setProfile(nextProf);
+          setIntakeAnswers(prev => ({
+            ...prev,
+            startupName: nextProf.startupName || prev.startupName,
+            sector: nextProf.sector || prev.sector,
+            stage: nextProf.stage || prev.stage,
+            state: nextProf.state || prev.state,
+            womenLed: nextProf.womenLed ?? prev.womenLed,
+            documentsHeld: [
+              ...(nextProf.dpiitRegistered ? ["dpiit_cert"] : []),
+              ...(nextProf.entityType === "private_limited" ? ["incorporation"] : []),
+              ...prev.documentsHeld.filter(d => d !== "dpiit_cert" && d !== "incorporation")
+            ]
+          }));
+          try {
+            localStorage.setItem("founder_profile", JSON.stringify(nextProf));
+          } catch {}
         }}
       />
 

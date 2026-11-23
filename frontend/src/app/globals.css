@@ -164,6 +164,18 @@ body {
     background: #ffffff !important;
   }
 
+  .page-break {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .step-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+  }
+
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;

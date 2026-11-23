@@ -530,6 +530,11 @@ export default function Home() {
         isOpen={showCopilot}
         onClose={() => setShowCopilot(false)}
         userProfile={profile}
+        onNavigateTab={(tab) => setActiveTab(tab as NavTab)}
+        onSelectScheme={(schemeId) => {
+          const found = schemes.find(s => String(s.id) === String(schemeId) || s.scheme_name === schemeId);
+          if (found) setSelectedScheme(found);
+        }}
       />
 
       {/* 4. Unlock Simulator Modal */}

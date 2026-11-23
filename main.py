@@ -124,6 +124,8 @@ class CopilotQueryReq(BaseModel):
     query: str
     active_view: str = "dashboard"
     user_profile: Optional[Dict[str, Any]] = None
+    chip_payload: Optional[Dict[str, Any]] = None
+    history: Optional[List[Dict[str, str]]] = None
 
 # In-memory mock DB for applications
 user_applications_db = []
@@ -607,7 +609,9 @@ async def copilot_query_endpoint(req: CopilotQueryReq):
             query=req.query,
             schemes=schemes,
             active_view=req.active_view,
-            user_profile=req.user_profile
+            user_profile=req.user_profile,
+            chip_payload=req.chip_payload,
+            history=req.history
         )
         return result
     except Exception as e:

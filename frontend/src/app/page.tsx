@@ -21,7 +21,7 @@ import { RoadmapWizardModal } from "@/components/roadmap/RoadmapWizardModal";
 import { PlatformTourModal } from "@/components/tour/PlatformTourModal";
 import { NotificationDrawer, FloatingNotificationToast } from "@/components/notifications/NotificationDrawer";
 import notificationsData from "@/data/notifications.json";
-import { DemoPersonaSelector, DEMO_PERSONAS } from "@/components/demo/DemoPersonaSelector";
+import { DEMO_PERSONAS } from "@/components/demo/DemoPersonaSelector";
 import { generatePersonalizedRoadmap } from "@/lib/roadmapEngine";
 import { useAppData } from "@/hooks/useAppData";
 import { 
@@ -335,45 +335,35 @@ export default function Home() {
           
           {/* TAB 1: OVERVIEW & DASHBOARD */}
           {activeTab === "dashboard" && (
-            <div className="space-y-6">
-              <DemoPersonaSelector
-                activePersonaSlug={activePersonaSlug}
-                onSelectPersona={handleSelectDemoPersona}
-              />
-
-              <OverviewView
-                profile={profile}
-                recommendations={recommendations}
-                unlockable={unlockable}
-                unlockInsights={unlockInsights}
-                totalSchemesCount={schemes.length || 193}
-                loading={loading}
-                recommendationsStatus={recommendationsState.status}
-                recommendationsError={recommendationsState.error}
-                onRetryRecommendations={() => retryResource("recommendations")}
-                onSelectScheme={(s) => setSelectedScheme(s)}
-                onOpenProfileModal={() => setShowProfileModal(true)}
-                onOpenOnePagerModal={() => setShowOnePagerModal(true)}
-                onOpenComplianceModal={() => setShowComplianceModal(true)}
-                onNavigate={(tab) => {
-                  if (tab === "unlock") setShowUnlockModal(true);
-                  else if (tab === "compliance") setShowComplianceModal(true);
-                  else setActiveTab(tab);
-                }}
-                onBuildRoadmap={() => setActiveTab("roadmap")}
-                onOpenTour={() => setShowTourModal(true)}
-              />
-            </div>
+            <OverviewView
+              profile={profile}
+              recommendations={recommendations}
+              unlockable={unlockable}
+              unlockInsights={unlockInsights}
+              totalSchemesCount={schemes.length || 193}
+              loading={loading}
+              recommendationsStatus={recommendationsState.status}
+              recommendationsError={recommendationsState.error}
+              onRetryRecommendations={() => retryResource("recommendations")}
+              onSelectScheme={(s) => setSelectedScheme(s)}
+              onOpenProfileModal={() => setShowProfileModal(true)}
+              onOpenOnePagerModal={() => setShowOnePagerModal(true)}
+              onOpenComplianceModal={() => setShowComplianceModal(true)}
+              onNavigate={(tab) => {
+                if (tab === "unlock") setShowUnlockModal(true);
+                else if (tab === "compliance") setShowComplianceModal(true);
+                else setActiveTab(tab);
+              }}
+              onBuildRoadmap={() => setActiveTab("roadmap")}
+              onOpenTour={() => setShowTourModal(true)}
+              activePersonaSlug={activePersonaSlug}
+              onSelectPersona={handleSelectDemoPersona}
+            />
           )}
 
           {/* TAB 2: PERSONALIZED ACTIONABLE ROADMAP */}
           {activeTab === "roadmap" && (
             <div className="space-y-6">
-              <DemoPersonaSelector
-                activePersonaSlug={activePersonaSlug}
-                onSelectPersona={handleSelectDemoPersona}
-                compact
-              />
               <RoadmapView
                 roadmap={roadmap}
                 onUpdateStepStatus={handleUpdateStepStatus}

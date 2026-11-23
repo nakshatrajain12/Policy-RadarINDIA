@@ -11,6 +11,7 @@ import { SchemesExplorerView } from "@/components/schemes/SchemesExplorerView";
 import { SchemeDetailModal } from "@/components/schemes/SchemeDetailModal";
 import { AnalyticsView } from "@/components/analytics/AnalyticsView";
 import { SuccessStoriesView } from "@/components/stories/SuccessStoriesView";
+import { PolicyUpdatesView } from "@/components/alerts/PolicyUpdatesView";
 import { CopilotDrawer } from "@/components/copilot/CopilotDrawer";
 import { FounderProfileModal } from "@/components/profile/FounderProfileModal";
 import { UnlockSimulatorModal } from "@/components/unlock/UnlockSimulatorModal";
@@ -22,6 +23,7 @@ import { PlatformTourModal } from "@/components/tour/PlatformTourModal";
 import { NotificationDrawer, FloatingNotificationToast } from "@/components/notifications/NotificationDrawer";
 import notificationsData from "@/data/notifications.json";
 import { DEMO_PERSONAS } from "@/components/demo/DemoPersonaSelector";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { generatePersonalizedRoadmap } from "@/lib/roadmapEngine";
 import { useAppData } from "@/hooks/useAppData";
 import { 
@@ -385,147 +387,92 @@ export default function Home() {
           
           {/* TAB 1: OVERVIEW & DASHBOARD */}
           {activeTab === "dashboard" && (
-            <OverviewView
-              profile={profile}
-              recommendations={recommendations}
-              unlockable={unlockable}
-              unlockInsights={unlockInsights}
-              totalSchemesCount={schemes.length || 193}
-              loading={loading}
-              recommendationsStatus={recommendationsState.status}
-              recommendationsError={recommendationsState.error}
-              onRetryRecommendations={() => retryResource("recommendations")}
-              onSelectScheme={(s) => setSelectedScheme(s)}
-              onOpenProfileModal={() => setShowProfileModal(true)}
-              onOpenOnePagerModal={() => setShowOnePagerModal(true)}
-              onOpenComplianceModal={() => setShowComplianceModal(true)}
-              onNavigate={(tab) => {
-                if (tab === "unlock") setShowUnlockModal(true);
-                else if (tab === "compliance") setShowComplianceModal(true);
-                else setActiveTab(tab);
-              }}
-              onBuildRoadmap={() => setActiveTab("roadmap")}
-              onOpenTour={() => setShowTourModal(true)}
-              activePersonaSlug={activePersonaSlug}
-              onSelectPersona={handleSelectDemoPersona}
-            />
+            <ErrorBoundary tabName="Overview & Matches">
+              <OverviewView
+                profile={profile}
+                recommendations={recommendations}
+                unlockable={unlockable}
+                unlockInsights={unlockInsights}
+                totalSchemesCount={schemes.length || 193}
+                loading={loading}
+                recommendationsStatus={recommendationsState.status}
+                recommendationsError={recommendationsState.error}
+                onRetryRecommendations={() => retryResource("recommendations")}
+                onSelectScheme={(s) => setSelectedScheme(s)}
+                onOpenProfileModal={() => setShowProfileModal(true)}
+                onOpenOnePagerModal={() => setShowOnePagerModal(true)}
+                onOpenComplianceModal={() => setShowComplianceModal(true)}
+                onNavigate={(tab) => {
+                  if (tab === "unlock") setShowUnlockModal(true);
+                  else if (tab === "compliance") setShowComplianceModal(true);
+                  else setActiveTab(tab);
+                }}
+                onBuildRoadmap={() => setActiveTab("roadmap")}
+                onOpenTour={() => setShowTourModal(true)}
+                activePersonaSlug={activePersonaSlug}
+                onSelectPersona={handleSelectDemoPersona}
+              />
+            </ErrorBoundary>
           )}
 
           {/* TAB 2: PERSONALIZED ACTIONABLE ROADMAP */}
           {activeTab === "roadmap" && (
-            <div className="space-y-6">
-              <RoadmapView
-                roadmap={roadmap}
-                onUpdateStepStatus={handleUpdateStepStatus}
-                onOpenWizard={() => setShowRoadmapWizard(true)}
-                onSelectSchemeDetail={(sName) => {
-                  const found = schemes.find(s => s.scheme_name.toLowerCase() === sName.toLowerCase());
-                  if (found) setSelectedScheme(found);
-                }}
-              />
-            </div>
+            <ErrorBoundary tabName="My Action Roadmap">
+              <div className="space-y-6">
+                <RoadmapView
+                  roadmap={roadmap}
+                  onUpdateStepStatus={handleUpdateStepStatus}
+                  onOpenWizard={() => setShowRoadmapWizard(true)}
+                  onSelectSchemeDetail={(sName) => {
+                    const found = schemes.find(s => s.scheme_name.toLowerCase() === sName.toLowerCase());
+                    if (found) setSelectedScheme(found);
+                  }}
+                />
+              </div>
+            </ErrorBoundary>
           )}
 
           {/* TAB 3: SCHEMES EXPLORER */}
           {activeTab === "schemes" && (
-            <SchemesExplorerView
-              schemes={schemes}
-              onSelectScheme={(s) => setSelectedScheme(s)}
-              userProfile={profile}
-            />
+            <ErrorBoundary tabName="Schemes Explorer">
+              <SchemesExplorerView
+                schemes={schemes}
+                onSelectScheme={(s) => setSelectedScheme(s)}
+                userProfile={profile}
+              />
+            </ErrorBoundary>
           )}
 
           {/* TAB 4: POLICY ANALYTICS 2.0 */}
           {activeTab === "analytics" && (
-            <AnalyticsView
-              data={analyticsData}
-              status={analyticsState.status}
-              error={analyticsState.error}
-              isLocalFallback={analyticsState.isLocalFallback}
-              onRetry={() => retryResource("analytics")}
-            />
+            <ErrorBoundary tabName="Policy Analytics">
+              <AnalyticsView
+                data={analyticsData}
+                status={analyticsState.status}
+                error={analyticsState.error}
+                isLocalFallback={analyticsState.isLocalFallback}
+                onRetry={() => retryResource("analytics")}
+              />
+            </ErrorBoundary>
           )}
 
           {/* TAB 5: SUCCESS STORIES */}
           {activeTab === "stories" && (
-            <SuccessStoriesView />
+            <ErrorBoundary tabName="Success Stories">
+              <SuccessStoriesView />
+            </ErrorBoundary>
           )}
 
           {/* TAB 6: POLICY UPDATES & DEADLINES */}
           {activeTab === "alerts" && (
-            <div className="space-y-4 animate-fadeIn">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
-                <div>
-                  <h1 className="text-2xl font-black text-slate-950 dark:text-white font-headline">
-                    Live Policy & Deadline Alerts
-                  </h1>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Real-time alerts synced daily with the official Gazette of India at 09:00 AM IST.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowNotificationDrawer(true)}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors"
-                >
-                  Open Alert Drawer
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                {[
-                  {
-                    title: "BIRAC BIG Scheme Call 26 Announced",
-                    ministry: "Dept of Biotechnology / BIRAC",
-                    date: "Active - Closes in 18 days",
-                    desc: "Up to ₹50 Lakhs grant-in-aid for biotech, medtech, and agricultural diagnostics innovators.",
-                    type: "Grant Call"
-                  },
-                  {
-                    title: "Karnataka ELEVATE 2026 Applications Open",
-                    ministry: "Dept of IT/BT, Govt of Karnataka",
-                    date: "Closes March 31, 2026",
-                    desc: "Early-stage prototype grant up to ₹50 Lakhs for registered Karnataka tech enterprises.",
-                    type: "State Policy"
-                  },
-                  {
-                    title: "Startup India Seed Fund Scheme (SISFS) Incubator Round",
-                    ministry: "DPIIT",
-                    date: "Rolling Intake",
-                    desc: "Central grant up to ₹20 Lakhs for validation and convertible debt up to ₹50 Lakhs via approved incubators.",
-                    type: "Central Grant"
-                  },
-                  {
-                    title: "Credit Guarantee Scheme (CGSS) Expansion",
-                    ministry: "Ministry of Commerce & Industry",
-                    date: "Permanent Gazette",
-                    desc: "Collateral-free debt guarantees up to ₹10 Crore for revenue-generating DPIIT registered startups.",
-                    type: "Debt Guarantee"
-                  }
-                ].map((alert, aIdx) => (
-                  <div key={aIdx} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 flex flex-col justify-between space-y-3">
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
-                          {alert.type}
-                        </span>
-                        <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">{alert.date}</span>
-                      </div>
-                      <h3 className="text-sm font-bold text-slate-950 dark:text-white">{alert.title}</h3>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">{alert.desc}</p>
-                    </div>
-                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                      <span className="text-[10px] text-slate-500">{alert.ministry}</span>
-                      <button 
-                        onClick={() => setActiveTab("schemes")}
-                        className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        Explore in Registry &rarr;
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ErrorBoundary tabName="Policy Updates & Deadlines">
+              <PolicyUpdatesView
+                schemes={schemes}
+                onSelectScheme={(s) => setSelectedScheme(s)}
+                onOpenNotificationDrawer={() => setShowNotificationDrawer(true)}
+                onNavigateToSchemes={() => setActiveTab("schemes")}
+              />
+            </ErrorBoundary>
           )}
 
         </main>

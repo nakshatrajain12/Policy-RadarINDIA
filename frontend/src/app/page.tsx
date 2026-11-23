@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { X } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
-import { Sidebar, NavTab } from "@/components/layout/Sidebar";
+import { Sidebar, NavTab, MobileBottomNav } from "@/components/layout/Sidebar";
 import { OverviewView } from "@/components/dashboard/OverviewView";
 import { SchemesExplorerView } from "@/components/schemes/SchemesExplorerView";
 import { SchemeDetailModal } from "@/components/schemes/SchemeDetailModal";
@@ -20,6 +20,7 @@ import { RoadmapView } from "@/components/roadmap/RoadmapView";
 import { RoadmapWizardModal } from "@/components/roadmap/RoadmapWizardModal";
 import { PlatformTourModal } from "@/components/tour/PlatformTourModal";
 import { NotificationDrawer, FloatingNotificationToast } from "@/components/notifications/NotificationDrawer";
+import notificationsData from "@/data/notifications.json";
 import { DemoPersonaSelector, DEMO_PERSONAS } from "@/components/demo/DemoPersonaSelector";
 import { generatePersonalizedRoadmap } from "@/lib/roadmapEngine";
 import { useAppData } from "@/hooks/useAppData";
@@ -74,6 +75,20 @@ export default function Home() {
   const [showRoadmapWizard, setShowRoadmapWizard] = useState(false);
   const [showTourModal, setShowTourModal] = useState(false);
   const [showNotificationDrawer, setShowNotificationDrawer] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [readNotifIds, setReadNotifIds] = useState<Set<string>>(new Set());
+
+  // Dynamic unread count based on notifications data and read IDs in localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("govdash_read_notifs");
+      if (saved) setReadNotifIds(new Set(JSON.parse(saved)));
+    } catch {}
+  }, [showNotificationDrawer]);
+
+  const unreadAlertsCount = useMemo(() => {
+    return notificationsData.filter(n => !readNotifIds.has(n.id)).length;
+  }, [readNotifIds]);
 
   // 1. Data Loading via Hook (Parallel fetches, fetchJson, abort timeout, retry)
   const {
@@ -258,36 +273,37 @@ export default function Home() {
   };
 
   if (!mounted) {
-    return <div className="min-h-screen bg-slate-50 dark:bg-slate-950" />;
+    return <div className="min-h-screen bg-bg" />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans selection:bg-blue-600 selection:text-white transition-colors">
+    <div className="min-h-screen flex flex-col bg-bg text-text font-sans selection:bg-accent selection:text-white transition-colors overflow-x-hidden">
       
       {/* ── Top Navigation Bar ────────────────────────────────────────── */}
       <Navbar
         profile={profile}
         onOpenProfileModal={() => setShowProfileModal(true)}
         onOpenCopilot={() => setShowCopilot(true)}
-        onOpenComplianceModal={() => setShowComplianceModal(true)}
         onOpenOnePagerModal={() => setShowOnePagerModal(true)}
         onQuickSearch={() => setActiveTab("schemes")}
         onLogout={handleLogout}
         onOpenTour={() => setShowTourModal(true)}
         onOpenNotifications={() => setShowNotificationDrawer(true)}
-        unreadAlertsCount={2}
+        unreadAlertsCount={unreadAlertsCount}
+        onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        isMobileMenuOpen={isMobileMenuOpen}
       />
 
       {/* ── Offline Mode Banner (Dismissible) ─────────────────────────── */}
       {isOffline && showOfflineBanner && (
         <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between transition-all">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
             <span className="font-medium">Using bundled data (offline mode)</span>
           </div>
           <button
             onClick={() => setShowOfflineBanner(false)}
-            className="p-1 text-amber-700 dark:text-amber-400 hover:text-amber-950 dark:hover:text-white rounded transition-colors"
+            className="p-1 text-amber-700 dark:text-amber-400 hover:text-amber-950 dark:hover:text-white rounded transition-colors cursor-pointer"
             aria-label="Dismiss offline banner"
           >
             <X className="w-3.5 h-3.5" />
@@ -297,7 +313,7 @@ export default function Home() {
 
       {/* ── Main Content Area with Sidebar ────────────────────────────── */}
       <div className="flex-1 max-w-7xl w-full mx-auto flex">
-        {/* Left Desktop Sidebar */}
+        {/* Left Desktop & Mobile Drawer Sidebar */}
         <Sidebar
           activeTab={activeTab}
           onTabChange={(tab) => {
@@ -310,11 +326,12 @@ export default function Home() {
             }
           }}
           totalSchemesCount={schemes.length || 193}
-          onOpenOnePager={() => setShowOnePagerModal(true)}
+          isOpenMobile={isMobileMenuOpen}
+          onCloseMobile={() => setIsMobileMenuOpen(false)}
         />
 
         {/* Dynamic Center Stage */}
-        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 overflow-y-auto">
           
           {/* TAB 1: OVERVIEW & DASHBOARD */}
           {activeTab === "dashboard" && (
@@ -553,6 +570,21 @@ export default function Home() {
         suppress={showRoadmapWizard || showTourModal}
         userSector={profile.sector}
         onOpenDrawer={() => setShowNotificationDrawer(true)}
+      />
+
+      {/* 11. Mobile Bottom Tab Bar */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        onTabChange={(tab) => {
+          if (tab === "unlock") {
+            setShowUnlockModal(true);
+          } else if (tab === "compliance") {
+            setShowComplianceModal(true);
+          } else {
+            setActiveTab(tab);
+          }
+        }}
+        onOpenMoreMenu={() => setIsMobileMenuOpen(true)}
       />
 
     </div>

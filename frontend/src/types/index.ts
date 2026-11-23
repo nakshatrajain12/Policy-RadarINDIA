@@ -158,6 +158,7 @@ export interface AnalyticsBundle {
     unique_ministries: number;
     pan_india_schemes: number;
     state_schemes: number;
+    unstated_count?: number;
   };
   instrument_breakdown: Array<{
     instrument: string;
@@ -175,9 +176,12 @@ export interface AnalyticsBundle {
   }>;
   top_ministries: Array<{
     ministry: string;
+    display_name?: string;
     scheme_count: number;
     total_max_funding: number;
+    total_display?: string;
     avg_funding: number;
+    avg_display?: string;
   }>;
   sector_distribution: Array<{
     sector: string;
@@ -193,6 +197,23 @@ export interface AnalyticsBundle {
     is_pan_india: boolean;
   }>;
   gap_heatmap: Array<Record<string, any>>;
+  eligibility_funnel?: Array<{
+    step: string;
+    count: number;
+    filter: string;
+    desc: string;
+  }>;
+  upcoming_deadlines?: Array<{
+    scheme_name: string;
+    ministry: string;
+    deadline_date: string;
+    funding_display: string;
+    funding_type: string;
+    sector: string;
+    state: string;
+  }>;
+  rolling_schemes_count?: number;
+  takeaways?: string[];
   ai_brief: string;
   facts: Record<string, any>;
   cached_at: number;

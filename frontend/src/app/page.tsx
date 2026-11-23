@@ -465,6 +465,18 @@ export default function Home() {
                 error={analyticsState.error}
                 isLocalFallback={analyticsState.isLocalFallback}
                 onRetry={() => retryResource("analytics")}
+                userProfile={profile}
+                schemes={schemes}
+                recommendations={recommendations}
+                unlockable={unlockable}
+                unlockInsights={unlockInsights}
+                onFilterExplorer={() => {
+                  setActiveTab("schemes");
+                }}
+                onNavigateTab={(tab) => setActiveTab(tab as NavTab)}
+                onOpenRoadmap={() => setActiveTab("roadmap")}
+                onOpenUnlockSimulator={() => setShowUnlockModal(true)}
+                onSelectScheme={(scheme) => setSelectedScheme(scheme)}
               />
             </ErrorBoundary>
           )}

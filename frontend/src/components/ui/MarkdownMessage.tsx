@@ -81,7 +81,7 @@ function parseInline(text: string): React.ReactNode[] {
   });
 }
 
-export function MarkdownMessage({ content, className = "", onSchemeClick }: Props) {
+export function MarkdownMessage({ content, className = "", onSchemeClick: _onSchemeClick }: Props) {
   if (!content) return null;
 
   // Split content into lines

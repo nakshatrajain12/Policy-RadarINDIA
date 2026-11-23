@@ -82,7 +82,7 @@ export function generatePersonalizedRoadmap(
       deadline: "Rolling / Open All Year",
       dependencies: hasIncorp ? [] : ["Incorporate as Private Limited or Registered LLP/Partnership"],
       status: dpiitStatus,
-      matchScore: 99
+      matchScore: 92
     });
   }
 
@@ -113,7 +113,7 @@ export function generatePersonalizedRoadmap(
       deadline: "Rolling / Open All Year",
       dependencies: [],
       status: udyamStatus,
-      matchScore: 97
+      matchScore: 89
     });
   }
 
@@ -125,6 +125,7 @@ export function generatePersonalizedRoadmap(
     targetPhase: RoadmapPhase;
     actionTitle: string;
     dependencies: string[];
+    isIncubator: boolean;
   }
 
   const scoredSchemes: ScoredScheme[] = [];
@@ -146,19 +147,23 @@ export function generatePersonalizedRoadmap(
     const isStateMatch = sGeo.includes("pan india") || sGeo.includes("all india") || (userState && sGeo.includes(userState));
     if (!isStateMatch) continue;
 
-    // Base scoring logic
-    let score = 50;
-    const whyReasons: string[] = [];
+    // Detect if this is an incubator scheme
+    const isIncubator = sLower.includes("aic") || 
+                        sLower.includes("nidhi-tbi") || 
+                        sLower.includes("atal incubation") || 
+                        sLower.includes("aic scaling") || 
+                        (sLower.includes("incubator") && !sLower.includes("sisfs"));
+
+    // Base scoring logic derived from criteria
+    let score = s.match_score || 50;
 
     // Sector Fit
     const isAllSectors = sSecs.some(x => x.includes("all") || x.includes("general") || x.includes("cross"));
     const isDirectSector = sSecs.some(x => x.includes(userSector) || userSector.includes(x));
     if (isDirectSector) {
-      score += 30;
-      whyReasons.push(`Specifically tailored for ${answers.sector} domain`);
+      score += 25;
     } else if (isAllSectors) {
-      score += 15;
-      whyReasons.push("Broad national program open to all innovation sectors");
+      score += 10;
     } else {
       continue; // Sector mismatch
     }
@@ -166,10 +171,9 @@ export function generatePersonalizedRoadmap(
     // Stage Fit
     const isStageDirect = sStages.some(x => x.includes(userStage) || userStage.includes(x) || x.includes("all"));
     if (isStageDirect) {
-      score += 20;
-      whyReasons.push(`Matches your active stage (${answers.stage})`);
+      score += 15;
     } else {
-      score -= 10;
+      score -= 5;
     }
 
     // Primary Goal Alignment
@@ -178,30 +182,28 @@ export function generatePersonalizedRoadmap(
 
     if (answers.primaryGoal === "Idea Validation / Prototype") {
       if (sFundType.includes("grant") || sLower.includes("prayas") || sLower.includes("eir") || sLower.includes("idea")) {
-        score += 25;
-        whyReasons.push("Provides 100% non-dilutive grant capital for early prototype fabrication");
+        score += 15;
       }
     } else if (answers.primaryGoal === "R&D Grant / Product MVP") {
       if (sFundType.includes("grant") || sLower.includes("seed") || sLower.includes("big") || sLower.includes("samridh")) {
-        score += 25;
-        whyReasons.push("Delivers non-dilutive POC and technical validation capital");
+        score += 15;
       }
     } else if (answers.primaryGoal === "Market Entry & Commercial Seed") {
       if (sLower.includes("sisfs") || sLower.includes("seed fund") || sFundType.includes("seed") || sFundType.includes("equity")) {
-        score += 25;
-        whyReasons.push("Targeted funding for market validation, trials, and commercial launch");
+        score += 15;
       }
     } else if (answers.primaryGoal === "Scale-up Debt / Credit Guarantee") {
       if (sFundType.includes("guarantee") || sFundType.includes("loan") || sLower.includes("cgss") || sLower.includes("stand-up")) {
-        score += 30;
-        whyReasons.push("Provides institutional credit access without requiring personal collateral");
+        score += 20;
       }
     } else if (answers.primaryGoal === "Tax Exemption & Patent Relief") {
       if (sLower.includes("80-iac") || sLower.includes("patent") || sLower.includes("ipr") || sFundType.includes("tax")) {
-        score += 30;
-        whyReasons.push("Saves cash runway through statutory tax relief and patent fee reimbursement");
+        score += 20;
       }
     }
+
+    // Normalized Score: no 99% on everything (realistic range between 68% and 94%)
+    const finalScore = Math.min(94, Math.max(65, score));
 
     // Determine Roadmap Phase Allocation
     let targetPhase: RoadmapPhase = "next";
@@ -221,31 +223,57 @@ export function generatePersonalizedRoadmap(
       actionVerb = "Scale Operations with";
       if (!hasDpiit) deps.push("DPIIT Recognition Certificate");
       if (!hasIncorp) deps.push("Formal MCA Incorporation");
+    } else if (isIncubator) {
+      targetPhase = "later";
+      actionVerb = "Enroll in";
     } else {
-      // Default phase by max funding
       if (sMaxFund <= 1500000) targetPhase = "now";
       else if (sMaxFund <= 10000000) targetPhase = "next";
       else targetPhase = "later";
     }
 
-    const whyFits = whyReasons.slice(0, 2).join(". ") + ".";
+    // Scheme-specific description (never generic "Broad national program")
+    const whyFits = s.nlp_summary
+      ? s.nlp_summary
+      : (Array.isArray(s.reasons) && s.reasons.length > 0)
+      ? s.reasons.join(". ")
+      : `${sName} provides ${formatInrCapital(sMaxFund)} in ${s.funding_type || "capital"} via ${s.ministry || "GoI"} for verified ${answers.sector} startups.`;
 
     scoredSchemes.push({
       scheme: s,
-      score: Math.min(score, 99),
+      score: finalScore,
       whyFits,
       targetPhase,
       actionTitle: `${actionVerb} ${sName}`,
-      dependencies: deps
+      dependencies: deps,
+      isIncubator
     });
   }
 
-  // Sort by score descending
-  scoredSchemes.sort((a, b) => b.score - a.score);
+  // Sort by score descending; if scores tie, break by deadline then amount
+  scoredSchemes.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    // Tie break 1: deadline (schemes with earlier deadlines come first)
+    const dA = a.scheme.application_deadline ? new Date(a.scheme.application_deadline).getTime() : Infinity;
+    const dB = b.scheme.application_deadline ? new Date(b.scheme.application_deadline).getTime() : Infinity;
+    if (dA !== dB) return dA - dB;
+    // Tie break 2: funding amount descending
+    return (b.scheme.max_funding_amount || 0) - (a.scheme.max_funding_amount || 0);
+  });
+
+  // Track incubator schemes destined for Phase 3 to avoid duplicates (Item 4)
+  const incubatorPool: Scheme[] = [];
 
   // Group into phases ensuring healthy distribution
   for (const item of scoredSchemes) {
     const s = item.scheme;
+
+    // Check if this is near-duplicate incubator program in Phase 3
+    if (item.targetPhase === "later" && item.isIncubator) {
+      incubatorPool.push(s);
+      continue; // group together below
+    }
+
     const stepId = `step-${s.id || s.scheme_name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
     const status = savedStatuses?.[stepId] || "not_started";
 
@@ -287,6 +315,48 @@ export function generatePersonalizedRoadmap(
     }
   }
 
+  // Handle incubator group in Phase 3 (Item 4: limit near-duplicates to one group item)
+  if (incubatorPool.length > 0 && laterSteps.length < 3) {
+    const incubatorCount = incubatorPool.length;
+    const maxIncubatorAmt = incubatorPool.reduce((max, cur) => Math.max(max, cur.max_funding_amount || 0), 0);
+    const groupStepId = "step-incubation-programmes-group";
+    const groupStatus = savedStatuses?.[groupStepId] || "not_started";
+
+    laterSteps.push({
+      id: groupStepId,
+      schemeId: "group-incubation-network",
+      phase: "later",
+      phaseOrder: 3,
+      title: `Incubation programmes (${incubatorCount})`,
+      schemeName: `Atal & NIDHI Incubation Programme Network (${incubatorCount} Centres)`,
+      ministry: "AIM / NITI Aayog & DST",
+      category: "Incubation & Infrastructure",
+      fundingDisplay: `Up to ${formatInrCapital(maxIncubatorAmt)} grant + infrastructure`,
+      fundingAmount: maxIncubatorAmt,
+      fundingType: "Incubator Residency & Grant",
+      whyItMatters: "Access dedicated deep-tech prototyping facilities, maker spaces, seed investment committees, and corporate trial networks across Atal Incubation Centres (AIC) and NIDHI-TBIs.",
+      documentsRequired: [
+        "Pitch Deck with Prototype Demo Link",
+        "Faculty / Mentor Endorsement (if academic spinoff)",
+        "Provisional IPR / Patent filing documentation"
+      ],
+      actionUrl: "https://aim.gov.in/atal-incubation-centres.php",
+      portalName: "Atal Innovation Mission Unified Portal",
+      estimatedTime: "4 - 8 Weeks Application Review",
+      deadline: "Rolling Calls per Centre",
+      dependencies: hasDpiit ? [] : ["DPIIT Recognition recommended for priority admission"],
+      status: groupStatus,
+      matchScore: 84,
+      subSchemes: incubatorPool.slice(0, 5).map(inc => ({
+        name: inc.scheme_name,
+        ministry: inc.ministry || "AIM / DST",
+        funding: formatInrCapital(inc.max_funding_amount),
+        portal: inc.application_portal || inc.source_url || "https://aim.gov.in",
+        summary: inc.nlp_summary || "Incubation residency with specialized testing infrastructure and seed support committee."
+      }))
+    });
+  }
+
   // Combine in strict temporal order
   const allSteps: RoadmapStep[] = [...nowSteps, ...nextSteps, ...laterSteps];
 
@@ -296,8 +366,24 @@ export function generatePersonalizedRoadmap(
   const totalSteps = allSteps.length;
   const progressPercentage = totalSteps > 0 ? Math.round(((completedSteps + inProgressSteps * 0.5) / totalSteps) * 100) : 0;
 
-  // Total Accessible Capital across Roadmap Steps
-  const totalCapital = allSteps.reduce((sum, s) => sum + s.fundingAmount, 0);
+  // Deduplicate schemes by schemeId to count each scheme strictly once (Item 3)
+  const distinctSchemes = Array.from(new Map(allSteps.map(s => [s.schemeId, s])).values());
+  
+  // Exclude credit guarantees and loans from grant totals (Item 3)
+  const grantSchemes = distinctSchemes.filter(s => {
+    const ft = (s.fundingType || "").toLowerCase();
+    const cat = (s.category || "").toLowerCase();
+    return !ft.includes("guarantee") && !ft.includes("loan") && !cat.includes("guarantee") && !cat.includes("debt");
+  });
+
+  const totalGrantCapital = grantSchemes.reduce((sum, s) => sum + s.fundingAmount, 0);
+  const totalGrantDisplay = totalGrantCapital >= 10000000
+    ? `₹${(totalGrantCapital / 10000000).toFixed(2)} Cr`
+    : totalGrantCapital >= 100000
+    ? `₹${(totalGrantCapital / 100000).toFixed(1)} Lakhs`
+    : `₹${totalGrantCapital.toLocaleString("en-IN")}`;
+
+  const totalCapitalDisplay = `Up to ${totalGrantDisplay} across ${grantSchemes.length} schemes (indicative, caps are per-scheme maximums)`;
 
   // Identify "Next Best Action": first incomplete step
   const nextBestAction = allSteps.find(s => s.status !== "done") || null;
@@ -315,8 +401,11 @@ export function generatePersonalizedRoadmap(
       dpiitRegistered: hasDpiit
     },
     stats: {
-      totalCapitalAvailable: totalCapital,
-      totalCapitalDisplay: formatInrCapital(totalCapital),
+      totalCapitalAvailable: totalGrantCapital,
+      totalCapitalDisplay,
+      totalGrantCapital,
+      totalGrantDisplay,
+      grantSchemesCount: grantSchemes.length,
       totalSteps,
       completedSteps,
       progressPercentage,

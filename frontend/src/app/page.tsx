@@ -153,7 +153,7 @@ export default function Home() {
         setTimeout(() => setShowTourModal(true), 1200);
       }
 
-      // Load saved step statuses
+      // Load saved step statuses from localStorage first
       try {
         const savedStatuses = localStorage.getItem("govdash_step_statuses");
         if (savedStatuses) {
@@ -161,6 +161,34 @@ export default function Home() {
           setStepStatuses(parsed);
         }
       } catch {}
+
+      // If Supabase authenticated user, sync remote step statuses
+      if (supabase) {
+        (async () => {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              const { data, error } = await supabase
+                .from("user_roadmap_steps")
+                .select("step_key, status")
+                .eq("user_id", user.id);
+              if (data && !error && data.length > 0) {
+                const remoteMap: Record<string, RoadmapStepStatus> = {};
+                data.forEach((r: { step_key: string; status: RoadmapStepStatus }) => {
+                  if (r.step_key && r.status) remoteMap[r.step_key] = r.status;
+                });
+                setStepStatuses(prev => {
+                  const merged = { ...prev, ...remoteMap };
+                  try {
+                    localStorage.setItem("govdash_step_statuses", JSON.stringify(merged));
+                  } catch {}
+                  return merged;
+                });
+              }
+            }
+          } catch {}
+        })();
+      }
 
       // Load saved profile
       const savedProfile = localStorage.getItem("founder_profile");
@@ -208,13 +236,35 @@ export default function Home() {
     } catch {}
   };
 
-  // 5. Update Step Status & Persist
+  // 5. Update Step Status & Persist (Supabase with RLS for auth, localStorage for guests)
   const handleUpdateStepStatus = (stepId: string, status: RoadmapStepStatus) => {
     const updated = { ...stepStatuses, [stepId]: status };
     setStepStatuses(updated);
+    
+    // Always persist to localStorage for instant local/guest availability
     try {
       localStorage.setItem("govdash_step_statuses", JSON.stringify(updated));
     } catch {}
+
+    // Persist to Supabase if authenticated
+    if (supabase) {
+      (async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase
+              .from("user_roadmap_steps")
+              .upsert({
+                user_id: user.id,
+                scheme_id: stepId,
+                step_key: stepId,
+                status: status,
+                updated_at: new Date().toISOString()
+              }, { onConflict: "user_id,step_key" });
+          }
+        } catch {}
+      })();
+    }
   };
 
   // 6. Complete Intake Wizard

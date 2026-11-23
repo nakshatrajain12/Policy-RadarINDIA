@@ -88,6 +88,13 @@ export interface RoadmapStep {
   dependencies: string[];
   status: RoadmapStepStatus;
   matchScore: number;
+  subSchemes?: {
+    name: string;
+    ministry?: string;
+    funding?: string;
+    portal?: string;
+    summary?: string;
+  }[];
 }
 
 export interface PersonalizedRoadmap {
@@ -105,6 +112,9 @@ export interface PersonalizedRoadmap {
   stats: {
     totalCapitalAvailable: number;
     totalCapitalDisplay: string;
+    totalGrantCapital?: number;
+    totalGrantDisplay?: string;
+    grantSchemesCount?: number;
     totalSteps: number;
     completedSteps: number;
     progressPercentage: number;

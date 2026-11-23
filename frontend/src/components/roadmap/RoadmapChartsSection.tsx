@@ -12,7 +12,7 @@ import {
   Pie, 
   Cell 
 } from "recharts";
-import { BarChart3, TrendingUp, CheckCircle2, PieChart as PieIcon } from "lucide-react";
+import { BarChart3, TrendingUp, CheckCircle2, PieChart as PieIcon, CircleDot } from "lucide-react";
 import { PersonalizedRoadmap } from "@/types";
 import { useTheme } from "@/context/ThemeProvider";
 import { Card } from "@/components/ui/Card";
@@ -29,16 +29,16 @@ export function RoadmapChartsSection({ roadmap }: Props) {
   const phaseColors = [chartColors.accent, chartColors.unlock, chartColors.warn];
   const statusColors = [chartColors.ok, chartColors.accent, chartColors.muted];
 
-  // Chart 1: Match Score per Scheme
+  // Chart 1: Match Score per Scheme (Horizontal Bars with full scheme names in tooltips)
   const matchScoreData = steps.slice(0, 6).map(s => ({
-    name: s.schemeName.length > 20 ? s.schemeName.slice(0, 18) + "..." : s.schemeName,
+    name: s.schemeName.length > 22 ? s.schemeName.slice(0, 20) + "..." : s.schemeName,
     fullName: s.schemeName,
     score: s.matchScore,
     funding: s.fundingDisplay,
     phase: s.phase.toUpperCase()
   }));
 
-  // Chart 2: Funding Type Comparison
+  // Chart 2: Funding Type Comparison in ₹ Crores (Fix units: ₹ amounts, not item counts)
   const fundingTypeMap: Record<string, { count: number; totalAmount: number }> = {};
   for (const s of steps) {
     const type = s.fundingType.includes("Grant") ? "Non-Dilutive Grant"
@@ -52,6 +52,7 @@ export function RoadmapChartsSection({ roadmap }: Props) {
   const fundingTypeData = Object.entries(fundingTypeMap).map(([type, val]) => ({
     type,
     count: val.count,
+    amountCr: Number((val.totalAmount / 10000000).toFixed(2)),
     amountLakhs: Math.round(val.totalAmount / 100000)
   }));
 
@@ -99,7 +100,8 @@ export function RoadmapChartsSection({ roadmap }: Props) {
 
       {/* Grid of 2x2 Visual Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Chart 1: Match Score per Scheme */}
+        
+        {/* Chart 1: Match Score per Scheme (Horizontal Bars) */}
         <Card className="p-4 sm:p-5 bg-surface border-border flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-1">
@@ -116,11 +118,14 @@ export function RoadmapChartsSection({ roadmap }: Props) {
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={matchScoreData} layout="vertical" margin={{ top: 5, right: 25, left: 10, bottom: 5 }}>
-                  <XAxis type="number" domain={[0, 100]} stroke={chartColors.muted} fontSize={10} />
-                  <YAxis dataKey="name" type="category" width={110} stroke={chartColors.muted} fontSize={10} />
+                  <XAxis type="number" domain={[0, 100]} stroke={chartColors.muted} fontSize={10} unit="%" />
+                  <YAxis dataKey="name" type="category" width={120} stroke={chartColors.muted} fontSize={10} />
                   <Tooltip
                     contentStyle={tooltipStyle}
-                    formatter={(val: any, _name: any, item: any) => [`${val}% Match Score (${item.payload.funding})`, item.payload.fullName]}
+                    formatter={(val: any, _name: any, item: any) => [
+                      `${val}% Match Fit (${item.payload.funding})`, 
+                      item.payload.fullName
+                    ]}
                   />
                   <Bar dataKey="score" fill={chartColors.accent} radius={[0, 4, 4, 0]} />
                 </BarChart>
@@ -130,7 +135,7 @@ export function RoadmapChartsSection({ roadmap }: Props) {
 
           <div className="pt-2.5 border-t border-border text-xs text-accent flex items-center gap-1 font-medium">
             <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-            <span>Insight: Top matched program achieves {matchScoreData[0]?.score || 99}% compatibility for {profileSummary.sector}.</span>
+            <span>Top program achieves {matchScoreData[0]?.score || 92}% fit for {profileSummary.sector}.</span>
           </div>
         </Card>
 
@@ -169,34 +174,41 @@ export function RoadmapChartsSection({ roadmap }: Props) {
 
           <div className="pt-2.5 border-t border-border text-xs text-unlock flex items-center gap-1 font-medium">
             <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-            <span>Insight: Complete Phase 1 ({stats.nowCount} steps) within 14 days to unlock Phase 2 seed grants.</span>
+            <span>Complete Phase 1 ({stats.nowCount} steps) within 14 days to unlock Phase 2 seed grants.</span>
           </div>
         </Card>
 
-        {/* Chart 3: Funding Instrument Breakdown */}
+        {/* Chart 3: Funding Instrument Breakdown (Horizontal Bars with ₹ Crores Units) */}
         <Card className="p-4 sm:p-5 bg-surface border-border flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-1">
               <h4 className="text-xs font-bold uppercase tracking-wider text-text flex items-center gap-1.5">
                 <PieIcon className="w-3.5 h-3.5 text-ok" />
-                Capital Instrument Composition
+                Capital by Funding Instrument
               </h4>
               <span className="text-xs text-ok font-bold">{stats.totalCapitalDisplay}</span>
             </div>
             <p className="text-xs text-muted mb-3">
-              Distribution between non-dilutive grants, loan guarantees, and regulatory accreditations.
+              Max accessible public capital measured in ₹ Crore across instrument categories.
             </p>
 
             <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={fundingTypeData} margin={{ top: 10, right: 20, left: -10, bottom: 10 }}>
-                  <XAxis dataKey="type" stroke={chartColors.muted} fontSize={10} />
-                  <YAxis stroke={chartColors.muted} fontSize={10} />
+                <BarChart 
+                  data={fundingTypeData} 
+                  layout="vertical"
+                  margin={{ top: 10, right: 25, left: 15, bottom: 5 }}
+                >
+                  <XAxis type="number" stroke={chartColors.muted} fontSize={10} unit=" Cr" />
+                  <YAxis type="category" dataKey="type" width={115} stroke={chartColors.muted} fontSize={10} />
                   <Tooltip
                     contentStyle={tooltipStyle}
-                    formatter={(val: any, _name: any, item: any) => [`${val} Programs (₹${item.payload.amountLakhs}L Max)`, item.payload.type]}
+                    formatter={(val: any, _name: any, item: any) => [
+                      `₹${val} Cr (${item.payload.count} scheme${item.payload.count > 1 ? "s" : ""})`,
+                      item.payload.type
+                    ]}
                   />
-                  <Bar dataKey="count" fill={chartColors.ok} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="amountCr" fill={chartColors.ok} radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -204,11 +216,11 @@ export function RoadmapChartsSection({ roadmap }: Props) {
 
           <div className="pt-2.5 border-t border-border text-xs text-ok flex items-center gap-1 font-medium">
             <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-            <span>Insight: Non-dilutive grants prioritized first to protect founder equity before commercial debt.</span>
+            <span>Non-dilutive grants prioritized first to protect founder equity before commercial debt.</span>
           </div>
         </Card>
 
-        {/* Chart 4: Roadmap Execution Progress Donut */}
+        {/* Chart 4: Roadmap Execution Progress Donut (with empty state "No steps started yet") */}
         <Card className="p-4 sm:p-5 bg-surface border-border flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-1">
@@ -223,27 +235,37 @@ export function RoadmapChartsSection({ roadmap }: Props) {
             </p>
 
             <div className="h-56 w-full flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={statusData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={4}
-                    dataKey="value"
-                  >
-                    {statusData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={statusColors[index % statusColors.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={tooltipStyle}
-                    formatter={(val: any, name: any) => [`${val} Milestones`, name]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              {doneCount === 0 && inProgressCount === 0 ? (
+                <div className="flex flex-col items-center justify-center text-center p-6 space-y-1.5">
+                  <CircleDot className="w-8 h-8 text-muted/50 stroke-1" />
+                  <p className="text-xs font-bold text-text">No steps started yet</p>
+                  <p className="text-[11px] text-muted max-w-[200px]">
+                    Click the checkbox on any milestone above to start tracking your execution progress.
+                  </p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={statusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={4}
+                      dataKey="value"
+                    >
+                      {statusData.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={statusColors[index % statusColors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={tooltipStyle}
+                      formatter={(val: any, name: any) => [`${val} Milestones`, name]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
 

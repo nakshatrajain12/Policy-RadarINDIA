@@ -86,9 +86,13 @@ export function computeLocalRecommendations(
       : typeof s.startup_stage === "string" ? [s.startup_stage.toLowerCase()] : [];
     const sGeo = (s.geographic_restriction || "Pan India").toLowerCase();
 
+    const isExactSector = sSecs.some(x => x.includes(userSec) || userSec.includes(x));
+    const isExactStage = sStages.some(x => x.includes(userStage) || userStage.includes(x));
+    const isExactState = sGeo.includes(userState);
+
     const secMatch = sSecs.length === 0 || sSecs.some(x => x.includes("all") || x.includes(userSec) || userSec.includes(x));
     const stageMatch = sStages.length === 0 || sStages.some(x => x.includes("all") || x.includes(userStage) || userStage.includes(x));
-    const geoMatch = sGeo.includes("pan") || sGeo.includes(userState);
+    const geoMatch = sGeo.includes("pan") || isExactState;
 
     if (secMatch && geoMatch) {
       const amt = s.max_funding_amount || 0;
@@ -98,12 +102,63 @@ export function computeLocalRecommendations(
         ? `₹${(amt / 100000).toFixed(0)} Lakhs`
         : "Non-dilutive";
 
+      // Derive match score strictly from criteria: met/unknown/not-met counts
+      let metCriteria = 0;
+      let unknownCriteria = 0;
+      let notMetCriteria = 0;
+
+      // 1. Sector criteria
+      if (isExactSector) metCriteria++;
+      else unknownCriteria++; // Broad/all sectors
+
+      // 2. Stage criteria
+      if (isExactStage) metCriteria++;
+      else if (stageMatch) unknownCriteria++; // All stages
+      else notMetCriteria++;
+
+      // 3. Geographic criteria
+      if (isExactState) metCriteria++;
+      else unknownCriteria++; // Pan-India
+
+      // 4. DPIIT criteria
+      if (!s.dpiit_required || profile.dpiitRegistered) metCriteria++;
+      else notMetCriteria++;
+
+      const totalCriteriaCount = metCriteria + unknownCriteria + notMetCriteria;
+      // Derived score: met gives 100%, unknown gives 60%, not-met gives 0%
+      const derivedScore = s.match_score || Math.min(95, Math.max(55, Math.round(
+        ((metCriteria * 100 + unknownCriteria * 60) / totalCriteriaCount)
+      )));
+
+      const criteriaMap: Record<string, { status: string; detail: string; hard: boolean }> = {
+        sector: {
+          status: isExactSector ? "met" : "unknown",
+          detail: isExactSector ? `Direct match for ${profile.sector}` : "Open across multiple sectors",
+          hard: false
+        },
+        stage: {
+          status: isExactStage ? "met" : stageMatch ? "unknown" : "not_met",
+          detail: isExactStage ? `Aligned with ${profile.stage} stage` : "General stage coverage",
+          hard: false
+        },
+        geography: {
+          status: isExactState ? "met" : "unknown",
+          detail: isExactState ? `Specific to ${profile.state}` : "Pan-India eligibility",
+          hard: false
+        },
+        dpiit: {
+          status: (!s.dpiit_required || profile.dpiitRegistered) ? "met" : "not_met",
+          detail: s.dpiit_required ? (profile.dpiitRegistered ? "DPIIT registered" : "Requires DPIIT recognition") : "No DPIIT restriction",
+          hard: Boolean(s.dpiit_required)
+        }
+      };
+
       const matchObj: RecommendationMatch = {
         id: s.id || `match-${directMatches.length + unlockableMatches.length}`,
         name: sName,
         ministry: s.ministry || "Government of India",
-        match_score: stageMatch ? 96 : 84,
-        eligibility_score: 95,
+        match_score: derivedScore,
+        eligibility_score: Math.min(95, Math.max(50, derivedScore + 2)),
         funding_type: s.funding_type || "Capital Grant",
         equity_type: "Non-dilutive Grant",
         max_funding_amount: amt,
@@ -111,8 +166,11 @@ export function computeLocalRecommendations(
         geographic_restriction: s.geographic_restriction || "Pan India",
         source_url: s.source_url || "https://www.startupindia.gov.in",
         application_portal: s.application_portal || s.source_url || "https://www.startupindia.gov.in",
-        reason: `Matched for ${profile.sector} at ${profile.stage} stage in ${profile.state}.`,
-        nlp_summary: s.nlp_summary || "Government incentive program for registered innovative enterprises."
+        reason: s.nlp_summary 
+          ? s.nlp_summary.slice(0, 140) + "..."
+          : `Matched for ${profile.sector} at ${profile.stage} stage in ${profile.state}.`,
+        nlp_summary: s.nlp_summary || "Government incentive program for registered innovative enterprises.",
+        criteria: criteriaMap
       };
 
       if (s.dpiit_required && !profile.dpiitRegistered) {

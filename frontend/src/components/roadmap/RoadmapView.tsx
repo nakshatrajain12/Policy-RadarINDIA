@@ -119,9 +119,9 @@ export function RoadmapView({ roadmap, onUpdateStepStatus, onOpenWizard, onSelec
           </div>
           <div className="sm:text-right">
             <div className="text-xs font-semibold text-muted">
-              Total Non-Dilutive & Guaranteed Capital
+              Indicative Non-Dilutive Capital
             </div>
-            <div className="text-xl sm:text-2xl font-bold text-ok font-headline">
+            <div className="text-sm sm:text-base font-bold text-ok font-headline mt-0.5">
               {stats.totalCapitalDisplay}
             </div>
           </div>
@@ -395,6 +395,43 @@ function PhaseSection({
                             <li key={idx}>{dep}</li>
                           ))}
                         </ul>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Included Incubation Centres Breakdown */}
+                  {step.subSchemes && step.subSchemes.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-bold text-text flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5 text-accent" />
+                        Included Incubation Centres & Programmes ({step.subSchemes.length}):
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {step.subSchemes.map((sub, sIdx) => (
+                          <div key={sIdx} className="p-2.5 rounded-lg bg-surface border border-border flex flex-col justify-between space-y-1.5">
+                            <div>
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-bold text-text line-clamp-1">{sub.name}</span>
+                                <span className="font-mono text-ok font-semibold">{sub.funding}</span>
+                              </div>
+                              <div className="text-[11px] text-muted line-clamp-1">{sub.ministry}</div>
+                              {sub.summary && (
+                                <p className="text-[11px] text-muted line-clamp-2 mt-1 leading-relaxed">{sub.summary}</p>
+                              )}
+                            </div>
+                            {sub.portal && (
+                              <a 
+                                href={sub.portal}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[11px] text-accent hover:underline font-semibold inline-flex items-center gap-1 self-start"
+                              >
+                                <span>Direct Portal</span>
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}

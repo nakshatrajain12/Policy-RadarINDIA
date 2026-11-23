@@ -6,7 +6,7 @@ export const maxDuration = 60; // Max duration for Vercel Serverless
 
 /**
  * Vercel Automated Daily Cron Endpoint
- * Scheduled via vercel.json crons: "0 2 * * *" (Every day at 02:00 UTC / 07:30 AM IST)
+ * Scheduled via vercel.json crons: "30 3 * * *" (Every day at 03:30 UTC / 09:00 AM IST)
  * Automatically syncs schemes, checks for newly gazetted programs, and updates database.
  */
 export async function GET(request: NextRequest) {
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       success: true,
       message: "GOV-DASH Daily Automated Pipeline Sync Completed Successfully",
       timestamp,
-      schedule: "Daily at 02:00 UTC (07:30 AM IST)",
+      schedule: "Daily at 03:30 UTC (09:00 AM IST)",
       total_active_schemes: schemeCount,
       backend_pipeline: backendSyncResult || "Supabase Registry Verified",
       automation_engine: "Vercel Cron + GitHub Actions Workflow"

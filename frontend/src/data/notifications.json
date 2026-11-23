@@ -1,0 +1,67 @@
+[
+  {
+    "id": "notif-1",
+    "title": "BIRAC BIG Call 26 Now Open",
+    "message": "Grant-in-aid up to ₹50 Lakhs for MedTech, BioTech & Agri-Bio startups. Early-stage idea to POC.",
+    "category": "Grant Deadline",
+    "tag": "High Priority",
+    "sector": "HealthTech & Bio",
+    "state": "Pan-India",
+    "date": "2026-11-20",
+    "deadline": "2026-12-15",
+    "link": "https://birac.nic.in/big.php",
+    "isNew": true
+  },
+  {
+    "id": "notif-2",
+    "title": "Credit Guarantee Scheme (CGSS) Budget Expansion",
+    "message": "Union Cabinet increases collateral-free loan guarantee limit up to ₹10 Crore for DPIIT recognized startups.",
+    "category": "Policy Update",
+    "tag": "Government Gazette",
+    "sector": "All Sectors",
+    "state": "Pan-India",
+    "date": "2026-11-18",
+    "deadline": "Rolling / Open All Year",
+    "link": "https://www.startupindia.gov.in/content/sih/en/compendium_of_good_practices/credit-guarantee-scheme-for-startups.html",
+    "isNew": true
+  },
+  {
+    "id": "notif-3",
+    "title": "Karnataka ELEVATE 2026 Applications Live",
+    "message": "Karnataka Innovation & Technology Society invites applications for ₹50 Lakhs seed grant across AgriTech & DeepTech.",
+    "category": "State Scheme",
+    "tag": "Karnataka",
+    "sector": "AgriTech",
+    "state": "Karnataka",
+    "date": "2026-11-15",
+    "deadline": "2026-12-30",
+    "link": "https://missionstartupkarnataka.org",
+    "isNew": false
+  },
+  {
+    "id": "notif-4",
+    "title": "Section 80-IAC Tax Exemption Fast-Track Portal",
+    "message": "DPIIT launches single-window expedited scrutiny for 3-year consecutive tax holidays for post-incorporation startups.",
+    "category": "Tax Relief",
+    "tag": "DPIIT",
+    "sector": "All Sectors",
+    "state": "Pan-India",
+    "date": "2026-11-12",
+    "deadline": "Rolling / Active",
+    "link": "https://www.startupindia.gov.in",
+    "isNew": false
+  },
+  {
+    "id": "notif-5",
+    "title": "NIDHI-PRAYAS Prototype Call (DST)",
+    "message": "Up to ₹10 Lakhs grant support for hardware and IoT physical prototypes. No equity taken.",
+    "category": "Hardware / DeepTech",
+    "tag": "Prototype Grant",
+    "sector": "DeepTech & Hardware",
+    "state": "Pan-India",
+    "date": "2026-11-10",
+    "deadline": "Rolling via Incubators",
+    "link": "https://nidhi-prayas.org",
+    "isNew": false
+  }
+]

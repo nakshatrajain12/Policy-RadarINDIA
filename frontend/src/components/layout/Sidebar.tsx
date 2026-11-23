@@ -15,7 +15,7 @@ import {
   FileText
 } from "lucide-react";
 
-export type NavTab = "dashboard" | "schemes" | "analytics" | "stories" | "compliance" | "unlock" | "alerts";
+export type NavTab = "dashboard" | "roadmap" | "schemes" | "analytics" | "stories" | "compliance" | "unlock" | "alerts";
 
 interface Props {
   activeTab: NavTab;
@@ -27,6 +27,7 @@ interface Props {
 export function Sidebar({ activeTab, onTabChange, totalSchemesCount, onOpenOnePager }: Props) {
   const navItems = [
     { id: "dashboard" as NavTab, label: "Overview", icon: LayoutDashboard, badge: "Matches" },
+    { id: "roadmap" as NavTab, label: "Action Roadmap", icon: Sparkles, badge: "Now/Next" },
     { id: "schemes" as NavTab, label: "Schemes Explorer", icon: Layers, badge: String(totalSchemesCount || 193) },
     { id: "analytics" as NavTab, label: "Analytics 2.0", icon: BarChart3, badge: "AI Brief" },
     { id: "stories" as NavTab, label: "Success Stories", icon: Award, badge: "Alumni" },

@@ -14,7 +14,9 @@ import {
   Compass,
   Sun,
   Moon,
-  FileText
+  FileText,
+  Bell,
+  HelpCircle
 } from "lucide-react";
 import { FounderProfile } from "@/types";
 
@@ -26,6 +28,9 @@ interface Props {
   onOpenOnePagerModal: () => void;
   onQuickSearch: () => void;
   onLogout: () => void;
+  onOpenTour?: () => void;
+  onOpenNotifications?: () => void;
+  unreadAlertsCount?: number;
 }
 
 export function Navbar({ 
@@ -35,7 +40,10 @@ export function Navbar({
   onOpenComplianceModal,
   onOpenOnePagerModal,
   onQuickSearch, 
-  onLogout 
+  onLogout,
+  onOpenTour,
+  onOpenNotifications,
+  unreadAlertsCount = 2
 }: Props) {
   const [isDark, setIsDark] = useState(true);
 
@@ -164,6 +172,33 @@ export function Navbar({
             <span className="hidden sm:inline">Copilot</span>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-ping ml-0.5" />
           </button>
+
+          {/* Platform Tour Button */}
+          {onOpenTour && (
+            <button
+              onClick={onOpenTour}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors"
+              title="Guided tour of GOV-DASH features"
+            >
+              <HelpCircle className="w-3.5 h-3.5 text-blue-500" />
+              <span>Tour</span>
+            </button>
+          )}
+
+          {/* Notification Bell */}
+          {onOpenNotifications && (
+            <button
+              onClick={onOpenNotifications}
+              className="p-2 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 transition-colors relative"
+              title="Real-time policy alerts & deadlines"
+              aria-label="View notifications"
+            >
+              <Bell className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+              {unreadAlertsCount > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-blue-500 ring-2 ring-slate-900 animate-pulse" />
+              )}
+            </button>
+          )}
 
           {/* Theme Toggle Button (Light / Dark) */}
           <button

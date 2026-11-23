@@ -33,6 +33,8 @@ interface Props {
   onOpenOnePagerModal: () => void;
   onOpenComplianceModal: () => void;
   onNavigate: (tab: any) => void;
+  onBuildRoadmap?: () => void;
+  onOpenTour?: () => void;
 }
 
 export function OverviewView({
@@ -47,6 +49,8 @@ export function OverviewView({
   onOpenOnePagerModal,
   onOpenComplianceModal,
   onNavigate,
+  onBuildRoadmap,
+  onOpenTour,
 }: Props) {
   const topMatches = recommendations.slice(0, 6);
 
@@ -58,75 +62,122 @@ export function OverviewView({
 
   return (
     <div className="space-y-8 animate-fadeIn">
-      {/* ── Top Header Section ───────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">
-        <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-              Personalized Intelligence Feed
-            </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">• Updated Today</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 dark:text-white tracking-tight font-headline">
-            Welcome to GOV-DASH, {profile.startupName || `${profile.sector} Founder`}!
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl">
-            GOV-DASH matched your venture against 193 verified central and state schemes to curate your optimal non-dilutive capital pathway.
-          </p>
+      {/* ── 1. Hero Section: Instant Clarity & Value Proposition (Feedback #1, #6) ── */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950/40 to-indigo-950/50 border border-blue-500/30 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          {/* Active Profile Filter Badges */}
-          <div className="flex flex-wrap items-center gap-2 mt-3.5">
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Active Targeting:</span>
-            <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-300 text-xs font-semibold border border-blue-500/20 flex items-center gap-1.5">
-              <span>Domain:</span> <strong className="text-slate-900 dark:text-white">{profile.sector}</strong>
-            </span>
-            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-semibold border border-emerald-500/20 flex items-center gap-1.5">
-              <span>Stage:</span> <strong className="text-slate-900 dark:text-white">{profile.stage}</strong>
-            </span>
-            <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-semibold border border-amber-500/20 flex items-center gap-1.5">
-              <span>Location:</span> <strong className="text-slate-900 dark:text-white">{profile.state}</strong>
-            </span>
-            {profile.dpiitRegistered ? (
-              <span className="px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-semibold border border-emerald-500/20">
-                DPIIT Registered ✓
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-3 max-w-2xl">
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                GOV-DASH INDIA 🇮🇳
               </span>
-            ) : (
-              <span className="px-2 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-medium">
-                Non-DPIIT
+              <span className="text-xs text-slate-400">
+                193 Schemes • 132 Ministries • 28 States
               </span>
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight font-headline leading-tight">
+              Personalised Government Scheme Roadmaps for Indian Innovators
+            </h1>
+
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Stop searching through 193 complex government portals. Get a custom step-by-step action roadmap with verified grants up to ₹10 Crore, deadlines, and required document checklists in under 2 minutes.
+            </p>
+
+            {/* 3-Step "How It Works" Strip */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
+              <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-[11px] text-slate-300 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center shrink-0">1</span>
+                <span>Profile your startup (2 mins)</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-[11px] text-slate-300 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 font-bold flex items-center justify-center shrink-0">2</span>
+                <span>Get 3-Phase Action Roadmap</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-[11px] text-slate-300 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0">3</span>
+                <span>Unlock Non-Dilutive Capital</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Primary Action Buttons */}
+          <div className="shrink-0 flex flex-col sm:flex-row lg:flex-col gap-2.5">
+            <button
+              onClick={onBuildRoadmap || (() => onNavigate("roadmap"))}
+              className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-sm shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Build My Action Roadmap</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+
+            {onOpenTour && (
+              <button
+                onClick={onOpenTour}
+                className="px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-xs font-bold text-slate-200 transition-colors flex items-center justify-center gap-2"
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-blue-400" />
+                <span>Take 60-Second Platform Tour</span>
+              </button>
             )}
-            <button
-              onClick={onOpenProfileModal}
-              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-500 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              Switch Domain
-            </button>
-            <button
-              onClick={onOpenComplianceModal}
-              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20 transition-colors"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              {profile.state} State Guide
-            </button>
           </div>
         </div>
+      </div>
 
-        {/* Action Buttons: One-Pager Download & Explore */}
-        <div className="shrink-0 flex items-center gap-3">
+      {/* ── Active Targeting Sub-Bar ─────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Active Targeting:</span>
+          <span className="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-300 text-xs font-semibold border border-blue-500/20">
+            🌾 {profile.sector}
+          </span>
+          <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-semibold border border-emerald-500/20">
+            🚀 {profile.stage}
+          </span>
+          <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs font-semibold border border-amber-500/20">
+            📍 {profile.state}
+          </span>
+          {profile.dpiitRegistered ? (
+            <span className="px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-semibold border border-emerald-500/20">
+              DPIIT Registered ✓
+            </span>
+          ) : (
+            <span className="px-2 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-medium">
+              Non-DPIIT
+            </span>
+          )}
+          <button
+            onClick={onOpenProfileModal}
+            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-500 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            Switch Domain
+          </button>
+          <button
+            onClick={onOpenComplianceModal}
+            className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/20 transition-colors"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            {profile.state} State Guide
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
           <button
             onClick={onOpenOnePagerModal}
-            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all flex items-center gap-2"
+            className="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-1.5"
           >
-            <FileText className="w-4 h-4" />
-            Download One-Pager Brief
+            <FileText className="w-3.5 h-3.5 text-blue-500" />
+            One-Pager Brief
           </button>
           <button
             onClick={() => onNavigate("schemes")}
-            className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-colors flex items-center gap-2"
+            className="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-1.5"
           >
-            <Layers className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-            Explore All {totalSchemesCount || 193} Schemes
+            <Layers className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+            All {totalSchemesCount || 193} Schemes
           </button>
         </div>
       </div>

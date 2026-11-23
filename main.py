@@ -48,6 +48,25 @@ def get_supabase():
     """Get the current Supabase client."""
     return _supabase_client
 
+def get_schemes_dataset() -> List[Dict[str, Any]]:
+    """Retrieve schemes from Supabase, or fall back to verified bundled seed schemes if Supabase is offline/empty."""
+    try:
+        res = safe_query(lambda sb: sb.table("schemes_clean").select("*").execute())
+        data = res.data or []
+        if data:
+            return data
+    except Exception:
+        pass
+    
+    seed_path = os.path.join(os.path.dirname(__file__), "frontend", "src", "data", "schemes_seed.json")
+    if os.path.exists(seed_path):
+        try:
+            with open(seed_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"[SEED] Error loading seed schemes: {e}")
+    return []
+
 def safe_query(query_fn, fallback=None):
     """Execute a Supabase query with automatic retry on connection failure.
     
@@ -502,8 +521,7 @@ async def get_pipeline_status():
 async def get_analytics_bundle():
     """Single high-speed endpoint returning complete analytics data package with verified AI brief."""
     try:
-        res = safe_query(lambda sb: sb.table("schemes_clean").select("*").execute())
-        schemes = res.data or []
+        schemes = get_schemes_dataset()
         bundle = AnalyticsEngine.get_bundle(schemes)
         return bundle
     except Exception as e:
@@ -514,8 +532,7 @@ async def get_analytics_bundle():
 async def copilot_query_endpoint(req: CopilotQueryReq):
     """Fast-path deterministic and contextual AI copilot query handler."""
     try:
-        res = safe_query(lambda sb: sb.table("schemes_clean").select("*").execute())
-        schemes = res.data or []
+        schemes = get_schemes_dataset()
         result = CopilotEngine.answer_query(
             query=req.query,
             schemes=schemes,

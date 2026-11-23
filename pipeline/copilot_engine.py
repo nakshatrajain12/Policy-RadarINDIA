@@ -38,6 +38,44 @@ class CopilotEngine:
                 "suggestions": ["Show Karnataka schemes", "Top 5 early stage grants", "What requires DPIIT?"]
             }
 
+        # ── 1b. FAST-PATH: Pan-India / Central Schemes ────────────────────
+        if any(term in q for term in ["pan-india", "pan india", "central scheme", "central govt", "all india", "national scheme"]):
+            matched = [
+                s for s in schemes
+                if "pan" in (s.get("geographic_restriction") or "").lower() or not s.get("geographic_restriction")
+            ]
+            count = len(matched)
+            sample_names = "\n".join(f"• **{s['scheme_name']}** ({s.get('ministry')}) — Max: ₹{(s.get('max_funding_amount') or 0)/100000:.1f}L" for s in matched[:5])
+            return {
+                "answer": (
+                    f"Found **{count} Pan-India / Central schemes** accessible nationwide to founders across all states:\n\n"
+                    f"{sample_names}\n\n"
+                    f"💡 *Tip: Pan-India schemes (like SISFS, BIRAC BIG, and TIDE 2.0) can be stacked with state-specific innovation subsidies.*"
+                ),
+                "source": "fast_path",
+                "suggestions": ["Top 5 early stage grants", "Which schemes do NOT require DPIIT?", "What is the highest funding grant?"]
+            }
+
+        # ── 1c. FAST-PATH: Early Stage & Idea Grants ─────────────────────
+        if any(term in q for term in ["early stage", "early-stage", "idea stage", "seed stage", "seed grant", "seed fund", "prototype grant"]):
+            matched = [
+                s for s in schemes
+                if ("grant" in (s.get("funding_type") or "").lower()) or
+                   any(st in str(s.get("startup_stage") or []).lower() for st in ["idea", "prototype", "early"])
+            ]
+            matched_sorted = sorted(matched, key=lambda x: x.get("max_funding_amount") or 0, reverse=True)
+            top5 = matched_sorted[:5]
+            sample_names = "\n".join(f"• **{s['scheme_name']}** ({s.get('ministry')}) — ₹{(s.get('max_funding_amount') or 0)/100000:.1f} Lakhs" for s in top5)
+            return {
+                "answer": (
+                    f"**Top Early-Stage Grants for Idea & Prototype Validation**:\n\n"
+                    f"{sample_names}\n\n"
+                    f"💡 *Recommendation: These non-dilutive grants provide initial prototype fabrication and validation capital without equity dilution.*"
+                ),
+                "source": "fast_path",
+                "suggestions": ["Which schemes do NOT require DPIIT?", "What schemes are active in Pan-India?", "How do I apply?"]
+            }
+
         # ── 2. FAST-PATH: Schemes in specific State ───────────────────────
         state_match = None
         for sname in ["karnataka", "kerala", "maharashtra", "telangana", "tamil nadu", "delhi", "gujarat", "rajasthan", "odisha", "uttar pradesh", "bihar", "punjab", "haryana"]:
@@ -146,6 +184,26 @@ class CopilotEngine:
                 "suggestions": ["How do I qualify?", "Show step-by-step application process", "What documents are required?"]
             }
         except Exception:
+            terms = [t for t in re.findall(r'\w+', q) if len(t) > 2 and t not in ["what", "which", "are", "active", "for", "the", "and", "show", "how", "can", "with", "does"]]
+            found = []
+            for s in schemes:
+                s_text = f"{s.get('scheme_name', '')} {s.get('ministry', '')} {s.get('nlp_summary', '')} {' '.join(s.get('sector_eligibility') or [])}".lower()
+                matches_count = sum(1 for t in terms if t in s_text)
+                if matches_count > 0:
+                    found.append((matches_count, s))
+            found.sort(key=lambda x: x[0], reverse=True)
+            if found:
+                top_schemes = [x[1] for x in found[:4]]
+                sample_txt = "\n".join(f"• **{s['scheme_name']}** ({s.get('ministry')}) — Max: ₹{(s.get('max_funding_amount') or 0)/100000:.1f}L" for s in top_schemes)
+                return {
+                    "answer": (
+                        f"Here are top verified schemes matching your query:\n\n"
+                        f"{sample_txt}\n\n"
+                        f"You can explore all {len(schemes)} schemes in the Schemes Explorer tab."
+                    ),
+                    "source": "fallback_search",
+                    "suggestions": ["Top 5 early stage grants", "What schemes are active in Pan-India?", "Which schemes do NOT require DPIIT?"]
+                }
             return {
                 "answer": (
                     f"I found {len(schemes)} startup schemes in our verified registry. "

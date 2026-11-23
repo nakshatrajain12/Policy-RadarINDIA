@@ -26,6 +26,9 @@ class PolicyAPI {
   }
 
   // Analytics
+  getAnalyticsBundle() {
+    return this.request<any>("/analytics/bundle");
+  }
   getSummary() {
     return this.request<any>("/analytics/summary");
   }

@@ -2,18 +2,16 @@
 
 import React from "react";
 import { 
-  BarChart3, 
-  TrendingUp, 
   Building2, 
   Coins, 
   Sparkles, 
   CheckCircle2, 
   MapPin, 
   Layers, 
-  ShieldCheck,
-  Grid,
-  PieChart as PieIcon,
-  Compass
+  Grid, 
+  Compass,
+  AlertCircle,
+  RotateCcw
 } from "lucide-react";
 import { 
   BarChart, 
@@ -21,31 +19,130 @@ import {
   XAxis, 
   YAxis, 
   Tooltip, 
-  ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  Cell 
+  ResponsiveContainer 
 } from "recharts";
 import { AnalyticsBundle } from "@/types";
+import { ResourceStatus } from "@/hooks/useAppData";
 
 interface Props {
   data: AnalyticsBundle | null;
-  loading: boolean;
+  status: ResourceStatus;
+  error?: string | null;
+  isLocalFallback?: boolean;
+  onRetry?: () => void;
 }
 
-const COLORS = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ec4899", "#06b6d4"];
-
-export function AnalyticsView({ data, loading }: Props) {
-  if (loading || !data) {
+export function AnalyticsView({ 
+  data, 
+  status, 
+  error, 
+  isLocalFallback, 
+  onRetry 
+}: Props) {
+  // 1. Loading Skeleton State (Never a bare spinner)
+  if (status === "loading" && !data) {
     return (
-      <div className="p-16 text-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/30">
-        <div className="inline-block w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-3" />
-        <p className="text-xs text-slate-500 dark:text-slate-400">Loading consolidated policy analytics and AI executive brief...</p>
+      <div className="space-y-8 animate-pulse">
+        <div className="pb-4 border-b border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="h-4 w-36 bg-slate-200 dark:bg-slate-800 rounded" />
+          <div className="h-8 w-96 bg-slate-200 dark:bg-slate-800 rounded" />
+          <div className="h-4 w-120 bg-slate-200 dark:bg-slate-800 rounded" />
+        </div>
+
+        {/* AI Brief Skeleton */}
+        <div className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-y-3">
+          <div className="h-4 w-48 bg-slate-200 dark:bg-slate-800 rounded" />
+          <div className="space-y-2">
+            <div className="h-3 w-full bg-slate-200 dark:bg-slate-800 rounded" />
+            <div className="h-3 w-5/6 bg-slate-200 dark:bg-slate-800 rounded" />
+          </div>
+        </div>
+
+        {/* KPI Cards Skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="p-5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+              <div className="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
+              <div className="h-7 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+              <div className="h-2.5 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+            </div>
+          ))}
+        </div>
+
+        {/* Charts Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="p-5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 h-72" />
+          <div className="p-5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 h-72" />
+        </div>
       </div>
     );
   }
 
-  const { summary, instrument_breakdown, regional_corridors, top_ministries, sector_distribution, stage_coverage, gap_heatmap, ai_brief } = data;
+  // 2. Error State with Retry Button
+  if (status === "error" && !data) {
+    return (
+      <div className="p-12 text-center rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 max-w-xl mx-auto my-8 space-y-4">
+        <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+          <AlertCircle className="w-6 h-6" />
+        </div>
+        <div>
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">
+            Unable to Load Policy Analytics
+          </h3>
+          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+            {error || "An error occurred while connecting to the analytics engine."}
+          </p>
+        </div>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition-colors"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Retry Analytics</span>
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // 3. Empty State
+  if (!data || !data.summary || data.summary.total_schemes === 0) {
+    return (
+      <div className="p-12 text-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 max-w-xl mx-auto my-8 space-y-4">
+        <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
+          <Layers className="w-6 h-6" />
+        </div>
+        <div>
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">
+            No Scheme Analytics Available
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            No public policy records found matching current criteria.
+          </p>
+        </div>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold shadow-sm transition-colors"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Refresh Analytics</span>
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  const { 
+    summary, 
+    instrument_breakdown, 
+    regional_corridors, 
+    top_ministries, 
+    sector_distribution, 
+    gap_heatmap, 
+    ai_brief 
+  } = data;
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -56,7 +153,15 @@ export function AnalyticsView({ data, loading }: Props) {
             <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
               National Policy Landscape
             </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">• Real-Time Aggregation</span>
+            {isLocalFallback ? (
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                Computed locally
+              </span>
+            ) : (
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                • Real-Time Aggregation
+              </span>
+            )}
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 dark:text-white tracking-tight font-headline">
             Policy Intelligence & Capital Allocation Analytics
@@ -77,7 +182,7 @@ export function AnalyticsView({ data, loading }: Props) {
             </span>
           </div>
           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" /> 100% Fact-Checked Against Database
+            <CheckCircle2 className="w-3 h-3" /> Fact-Checked Against Database
           </span>
         </div>
         <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-sans">
@@ -85,27 +190,20 @@ export function AnalyticsView({ data, loading }: Props) {
         </p>
       </div>
 
-      {/* ── Total Money by Funding Instrument (Non-Dilutive Grants, Debt, Equity, Subsidies) ── */}
+      {/* ── Total Money by Funding Instrument ─────────────────────────── */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-bold text-slate-950 dark:text-white flex items-center gap-2">
-              <Coins className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              Total Capital Allocation by Funding Instrument
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Breakdown of public capital available across non-dilutive grants, debt guarantees, venture equity and statutory subsidies.
-            </p>
-          </div>
+        <div>
+          <h2 className="text-base font-bold text-slate-950 dark:text-white flex items-center gap-2">
+            <Coins className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            Total Capital Allocation by Funding Instrument
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Breakdown of public capital available across non-dilutive grants, debt guarantees, venture equity and statutory subsidies.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {(instrument_breakdown || [
-            { instrument: "Non-Dilutive Grants", scheme_count: 82, total_display: "₹4,250 Cr", desc: "Equity-free prototyping, research, and PoC grants", color: "#10b981" },
-            { instrument: "Concessional Debt & Credit", scheme_count: 36, total_display: "₹10,000 Cr", desc: "Collateral-free loans & credit guarantee coverage", color: "#3b82f6" },
-            { instrument: "Venture Equity & Seed Funds", scheme_count: 45, total_display: "₹8,500 Cr", desc: "Direct equity co-investment & Fund-of-Funds", color: "#8b5cf6" },
-            { instrument: "Subsidies & Allowances", scheme_count: 30, total_display: "₹1,200 Cr", desc: "Patent fee rebates & monthly founder allowances", color: "#f59e0b" }
-          ]).map((item, idx) => (
+          {(instrument_breakdown || []).map((item, idx) => (
             <div 
               key={idx}
               className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-2"
@@ -205,7 +303,7 @@ export function AnalyticsView({ data, loading }: Props) {
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={top_ministries.slice(0, 6)}
+                data={(top_ministries || []).slice(0, 6)}
                 layout="vertical"
                 margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
               >
@@ -213,7 +311,7 @@ export function AnalyticsView({ data, loading }: Props) {
                 <YAxis dataKey="ministry" type="category" width={110} stroke="#64748b" fontSize={10} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "10px", fontSize: "12px", color: "#fff" }}
-                  formatter={(val: any) => [`${val} Schemes`, "Total Schemes"]}
+                  formatter={(val: unknown) => [`${val} Schemes`, "Total Schemes"]}
                 />
                 <Bar dataKey="scheme_count" fill="#3b82f6" radius={[0, 6, 6, 0]} />
               </BarChart>
@@ -234,7 +332,7 @@ export function AnalyticsView({ data, loading }: Props) {
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={sector_distribution.slice(0, 7)}
+                data={(sector_distribution || []).slice(0, 7)}
                 margin={{ top: 10, right: 20, left: -10, bottom: 25 }}
               >
                 <XAxis 
@@ -248,7 +346,7 @@ export function AnalyticsView({ data, loading }: Props) {
                 <YAxis stroke="#94a3b8" fontSize={11} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "10px", fontSize: "12px", color: "#fff" }}
-                  formatter={(val: any) => [`${val} Schemes`, "Total Schemes"]}
+                  formatter={(val: unknown) => [`${val} Schemes`, "Total Schemes"]}
                 />
                 <Bar dataKey="scheme_count" fill="#10b981" radius={[6, 6, 0, 0]} />
               </BarChart>
@@ -281,7 +379,7 @@ export function AnalyticsView({ data, loading }: Props) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-sans">
-              {gap_heatmap.map((row, rIdx) => {
+              {(gap_heatmap || []).map((row, rIdx) => {
                 const getHeatBg = (val: number) => {
                   if (val >= 25) return "bg-blue-600/20 text-blue-700 dark:text-blue-300 font-bold border border-blue-500/30";
                   if (val >= 12) return "bg-blue-500/10 text-blue-600 dark:text-blue-300 font-semibold";
@@ -295,23 +393,23 @@ export function AnalyticsView({ data, loading }: Props) {
                       {row.sector}
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className={`px-2 py-1 rounded-md text-xs ${getHeatBg(row["Idea"] || 0)}`}>
-                        {row["Idea"] || 0} schemes
+                      <span className={`px-2 py-1 rounded-md text-xs ${getHeatBg(Number(row["Idea"]) || 0)}`}>
+                        {Number(row["Idea"]) || 0} schemes
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className={`px-2 py-1 rounded-md text-xs ${getHeatBg(row["Prototype/MVP"] || 0)}`}>
-                        {row["Prototype/MVP"] || 0} schemes
+                      <span className={`px-2 py-1 rounded-md text-xs ${getHeatBg(Number(row["Prototype/MVP"]) || 0)}`}>
+                        {Number(row["Prototype/MVP"]) || 0} schemes
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className={`px-2 py-1 rounded-md text-xs ${getHeatBg(row["Early Revenue"] || 0)}`}>
-                        {row["Early Revenue"] || 0} schemes
+                      <span className={`px-2 py-1 rounded-md text-xs ${getHeatBg(Number(row["Early Revenue"]) || 0)}`}>
+                        {Number(row["Early Revenue"]) || 0} schemes
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className={`px-2 py-1 rounded-md text-xs ${getHeatBg(row["Growth/Scale-up"] || 0)}`}>
-                        {row["Growth/Scale-up"] || 0} schemes
+                      <span className={`px-2 py-1 rounded-md text-xs ${getHeatBg(Number(row["Growth/Scale-up"]) || 0)}`}>
+                        {Number(row["Growth/Scale-up"]) || 0} schemes
                       </span>
                     </td>
                   </tr>
@@ -322,7 +420,7 @@ export function AnalyticsView({ data, loading }: Props) {
         </div>
       </div>
 
-      {/* ── Regional Innovation Corridors (Grouping states into authoritative clusters) ── */}
+      {/* ── Regional Innovation Corridors ─────────────────────────────── */}
       <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
         <div>
           <h3 className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
@@ -335,13 +433,7 @@ export function AnalyticsView({ data, loading }: Props) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {(regional_corridors || [
-            { region: "Central & Pan-India Programs", count: 116, coverage: "Nationwide Access (DPIIT, BIRAC, MeitY, DST, MoD)", badge: "116 Schemes" },
-            { region: "Southern Tech Hubs", count: 24, coverage: "Karnataka, Kerala, Tamil Nadu, Telangana, Andhra Pradesh", badge: "High Grant Density" },
-            { region: "Western & Industrial Corridors", count: 19, coverage: "Maharashtra, Gujarat, Rajasthan, Madhya Pradesh, Goa", badge: "Manufacturing & Seed" },
-            { region: "Northern Innovation Corridors", count: 17, coverage: "Delhi NCR, Uttar Pradesh, Punjab, Haryana, Himalayan States", badge: "DeepTech & AgriTech" },
-            { region: "Eastern & North-East Missions", count: 17, coverage: "Odisha, Bihar, West Bengal, Assam & 8 North-Eastern States", badge: "Grassroots & Bio" }
-          ]).map((corr, idx) => (
+          {(regional_corridors || []).map((corr, idx) => (
             <div 
               key={idx}
               className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-2"

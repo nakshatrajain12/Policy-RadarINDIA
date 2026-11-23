@@ -41,10 +41,9 @@ export function SchemeComparisonModal({
   userProfile,
   onSelectScheme
 }: Props) {
-  if (!isOpen || schemes.length < 2) return null;
-
   // Analysis & Strategic Verdict Computation
   const analysis = useMemo(() => {
+    if (!isOpen || schemes.length < 2) return null;
     const details = schemes.map(s => ({
       scheme: s,
       formatted: formatSchemeGrantDetails(s)
@@ -98,7 +97,9 @@ export function SchemeComparisonModal({
       d1,
       d2
     };
-  }, [schemes, userProfile]);
+  }, [isOpen, schemes, userProfile]);
+
+  if (!isOpen || schemes.length < 2 || !analysis) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">

@@ -2,11 +2,26 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
+  let supabaseResponse = NextResponse.next({ request });
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  const pathname = request.nextUrl.pathname;
+  const hasSessionCookie = request.cookies.get('govdash_session')?.value;
+
+  // If Supabase is unconfigured, fallback to cookie session check only
+  if (!url || !key) {
+    if (hasSessionCookie && (pathname === '/login' || pathname === '/signup')) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = '/';
+      return NextResponse.redirect(redirectUrl);
+    }
+    return supabaseResponse;
+  }
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'placeholder-anon-key',
+    url,
+    key,
     {
       cookies: {
         getAll() {
@@ -21,28 +36,23 @@ export async function updateSession(request: NextRequest) {
         },
       },
     }
-  )
+  );
 
-  // Refresh session — DO NOT remove this
+  // Refresh session
   let user = null;
   try {
     const { data } = await supabase.auth.getUser();
     user = data?.user;
   } catch {
-    // Graceful fallback if Supabase auth is unconfigured or network blip
+    // Graceful fallback if auth check fails
   }
-  
-  const pathname = request.nextUrl.pathname;
-  const hasSessionCookie = request.cookies.get('govdash_session')?.value;
 
   // If already logged in, redirect away from /login or /signup
   if ((user || hasSessionCookie) && (pathname === '/login' || pathname === '/signup')) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/';
-    return NextResponse.redirect(url);
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/';
+    return NextResponse.redirect(redirectUrl);
   }
 
   return supabaseResponse;
-
-  return supabaseResponse
 }

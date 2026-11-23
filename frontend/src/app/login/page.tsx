@@ -36,10 +36,9 @@ export default function LoginPage() {
   const [canResend, setCanResend] = useState<boolean>(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key"
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabase = supabaseUrl && supabaseKey ? createBrowserClient(supabaseUrl, supabaseKey) : null;
 
   // Countdown timer for OTP resend
   useEffect(() => {
@@ -82,7 +81,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      if (email && password) {
+      if (supabase && email && password) {
         await supabase.auth.signInWithPassword({ email, password }).catch(() => null);
       }
     } catch {
@@ -120,13 +119,15 @@ export default function LoginPage() {
 
     try {
       // Best effort real Supabase email OTP with production redirect URL
-      const redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined;
-      await supabase.auth.signInWithOtp({ 
-        email,
-        options: {
-          emailRedirectTo: redirectUrl
-        }
-      }).catch(() => null);
+      if (supabase) {
+        const redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined;
+        await supabase.auth.signInWithOtp({ 
+          email,
+          options: {
+            emailRedirectTo: redirectUrl
+          }
+        }).catch(() => null);
+      }
     } catch {
       // Non-blocking
     }
@@ -152,17 +153,23 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
+    let sbErrorMsg: string | null = null;
     try {
       // 1. Verify directly with Supabase OTP using code received in user's email
-      const { data, error: sbErr } = await supabase.auth.verifyOtp({
-        email,
-        token: enteredOtp,
-        type: "email"
-      });
+      if (supabase) {
+        const { data, error: sbErr } = await supabase.auth.verifyOtp({
+          email,
+          token: enteredOtp,
+          type: "email"
+        });
 
-      if (!sbErr && data?.session) {
-        establishSessionAndRedirect(email, "Verified Founder");
-        return;
+        if (!sbErr && data?.session) {
+          establishSessionAndRedirect(email, "Verified Founder");
+          return;
+        }
+        if (sbErr) {
+          sbErrorMsg = sbErr.message;
+        }
       }
 
       // 2. Viva safety net: if enteredOtp matches generated code or 123456
@@ -171,7 +178,7 @@ export default function LoginPage() {
         return;
       }
 
-      setError(sbErr?.message || "Invalid verification code. Please check your email inbox and enter the 6 digits.");
+      setError(sbErrorMsg || "Invalid verification code. Please check your email inbox and enter the 6 digits.");
       setLoading(false);
     } catch (err: any) {
       if (enteredOtp === generatedCode || enteredOtp === "123456") {

@@ -34,10 +34,9 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key"
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabase = supabaseUrl && supabaseKey ? createBrowserClient(supabaseUrl, supabaseKey) : null;
 
   const establishSessionAndRedirect = (userEmail: string, name: string) => {
     // 1. Set persistent session cookie for middleware
@@ -80,7 +79,7 @@ export default function SignupPage() {
 
     try {
       // Best-effort Supabase user creation
-      if (email && password) {
+      if (supabase && email && password) {
         await supabase.auth.signUp({
           email,
           password,

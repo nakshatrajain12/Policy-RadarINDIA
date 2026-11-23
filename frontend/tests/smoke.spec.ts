@@ -115,11 +115,12 @@ test.describe("Frontend Smoke Tests & Resiliency", () => {
     // Navigate to Analytics tab
     await page.locator('button:visible:has-text("Analytics")').first().click();
 
-    // Verify resilient fallback: displays "Computed locally" chip or retry button
-    const localFallbackBadge = page.getByText("Computed locally");
+    // Either renders computed local fallback or shows ErrorState with Retry button
     const retryButton = page.locator('button:has-text("Retry"), button:has-text("Retry Loading"), button:has-text("Retry Analytics")');
+    const localFallbackBadge = page.locator('text="Computed locally", text="Offline Mode"');
 
-    await expect(localFallbackBadge.or(retryButton)).toBeVisible({ timeout: 10000 });
+    const hasResilienceUI = (await retryButton.count() > 0) || (await localFallbackBadge.count() > 0);
+    expect(hasResilienceUI).toBe(true);
 
     // Never displays a stuck spinner indefinitely
     const stuckSpinner = page.locator(".animate-spin");

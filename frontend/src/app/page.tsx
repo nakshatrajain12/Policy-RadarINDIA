@@ -527,6 +527,7 @@ export default function Home() {
         onClose={() => setShowOnePagerModal(false)}
         profile={profile}
         recommendations={recommendations}
+        roadmap={roadmap}
       />
 
       {/* 7. Roadmap Intake Wizard Modal */}

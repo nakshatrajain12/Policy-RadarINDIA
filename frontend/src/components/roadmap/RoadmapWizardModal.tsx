@@ -2,21 +2,17 @@
 
 import React, { useState } from "react";
 import { 
-  X, 
   ArrowRight, 
   ArrowLeft, 
   CheckCircle2, 
-  Compass, 
   Sparkles, 
-  Building2, 
-  Target, 
-  FileCheck, 
-  TrendingUp,
-  MapPin,
-  ShieldCheck
+  ShieldCheck 
 } from "lucide-react";
 import { IntakeAnswers } from "@/types";
 import { KNOWN_DOCUMENTS } from "@/lib/roadmapEngine";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 
 const SECTORS = [
   { id: "AgriTech", label: "AgriTech & Rural", icon: "🌾" },
@@ -93,49 +89,37 @@ export function RoadmapWizardModal({ isOpen, onClose, initialAnswers, onComplete
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        
-        {/* Wizard Header & Progress Bar */}
-        <div className="p-6 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between shrink-0">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                Roadmap Intake Wizard
-              </span>
-              <span className="text-xs text-slate-500">• Step {step} of 4</span>
-            </div>
-            <h2 className="text-xl font-extrabold text-white font-headline">
-              {step === 1 && "Venture Identification & Domain"}
-              {step === 2 && "Development Stage & Revenue Band"}
-              {step === 3 && "Primary Capital & Support Goal"}
-              {step === 4 && "Legal Status & Documents Held"}
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+  const getStepTitle = () => {
+    if (step === 1) return "Venture Identification & Domain";
+    if (step === 2) return "Development Stage & Revenue Band";
+    if (step === 3) return "Primary Capital & Support Goal";
+    return "Legal Status & Documents Held";
+  };
 
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={getStepTitle()}
+      subtitle={`Roadmap Intake Wizard • Step ${step} of 4`}
+      maxWidth="max-w-2xl"
+    >
+      <div className="space-y-6">
         {/* Step Progress Line */}
-        <div className="w-full bg-slate-800 h-1.5 shrink-0">
+        <div className="w-full bg-border h-1.5 rounded-full overflow-hidden">
           <div
-            className="bg-gradient-to-r from-blue-500 to-indigo-500 h-1.5 transition-all duration-300"
+            className="bg-accent h-1.5 transition-all duration-300"
             style={{ width: `${(step / 4) * 100}%` }}
           />
         </div>
 
         {/* Wizard Body (Scrollable) */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
+        <div className="max-h-[55vh] overflow-y-auto space-y-5 pr-1">
           {/* STEP 1: Startup Name, Sector, State */}
           {step === 1 && (
-            <div className="space-y-5 animate-fadeIn">
+            <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-text mb-1.5">
                   Venture / Project Name:
                 </label>
                 <input
@@ -143,12 +127,12 @@ export function RoadmapWizardModal({ isOpen, onClose, initialAnswers, onComplete
                   value={answers.startupName}
                   onChange={(e) => setAnswers({ ...answers, startupName: e.target.value })}
                   placeholder="e.g. AgriSense Innovations"
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white placeholder-slate-600 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full min-h-[44px] px-3.5 py-2 rounded-lg bg-surface-2 border border-border text-text placeholder-muted text-xs sm:text-sm focus:outline-none focus:border-accent"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-2">
+                <label className="block text-xs font-semibold text-text mb-2">
                   Primary Innovation Domain / Sector:
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -159,10 +143,10 @@ export function RoadmapWizardModal({ isOpen, onClose, initialAnswers, onComplete
                         key={sec.id}
                         type="button"
                         onClick={() => setAnswers({ ...answers, sector: sec.id })}
-                        className={`p-2.5 rounded-xl text-left text-xs font-medium border transition-all flex items-center gap-2 ${
+                        className={`min-h-[44px] p-2.5 rounded-lg text-left text-xs font-medium border transition-colors flex items-center gap-2 cursor-pointer ${
                           isSelected
-                            ? "bg-blue-600/20 border-blue-500 text-white shadow-sm"
-                            : "bg-slate-950/50 border-slate-800/80 text-slate-400 hover:text-white hover:border-slate-700"
+                            ? "bg-accent/15 border-accent text-accent font-semibold"
+                            : "bg-surface-2 border-border text-muted hover:text-text hover:border-border/80"
                         }`}
                       >
                         <span className="text-base">{sec.icon}</span>
@@ -174,16 +158,16 @@ export function RoadmapWizardModal({ isOpen, onClose, initialAnswers, onComplete
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-text mb-1.5">
                   Registered State / Operating Location:
                 </label>
                 <select
                   value={answers.state}
                   onChange={(e) => setAnswers({ ...answers, state: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-sm focus:outline-none focus:border-blue-500"
+                  className="w-full min-h-[44px] px-3.5 py-2 rounded-lg bg-surface-2 border border-border text-text text-xs sm:text-sm focus:outline-none focus:border-accent"
                 >
                   {STATES.map((st) => (
-                    <option key={st} value={st} className="bg-slate-900 text-white">
+                    <option key={st} value={st}>
                       {st}
                     </option>
                   ))}
@@ -194,40 +178,39 @@ export function RoadmapWizardModal({ isOpen, onClose, initialAnswers, onComplete
 
           {/* STEP 2: Stage & Turnover */}
           {step === 2 && (
-            <div className="space-y-5 animate-fadeIn">
+            <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-2">
+                <label className="block text-xs font-semibold text-text mb-2">
                   Current Maturity / Startup Stage:
                 </label>
                 <div className="space-y-2">
                   {STAGES.map((stg) => {
                     const isSelected = answers.stage === stg.id;
                     return (
-                      <button
+                      <Card
                         key={stg.id}
-                        type="button"
                         onClick={() => setAnswers({ ...answers, stage: stg.id })}
-                        className={`w-full p-3.5 rounded-xl text-left border transition-all flex items-start gap-3 ${
+                        className={`p-3.5 rounded-lg border transition-colors flex items-start gap-3 cursor-pointer ${
                           isSelected
-                            ? "bg-blue-600/20 border-blue-500 text-white shadow-sm"
-                            : "bg-slate-950/50 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
+                            ? "bg-accent/10 border-accent"
+                            : "bg-surface-2 border-border hover:border-border/80"
                         }`}
                       >
-                        <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? "border-blue-400 bg-blue-500" : "border-slate-600"}`}>
-                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? "border-accent bg-accent" : "border-muted"}`}>
+                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-accent-contrast" />}
                         </div>
                         <div>
-                          <div className="text-xs font-bold text-white">{stg.label}</div>
-                          <div className="text-[11px] text-slate-400 mt-0.5">{stg.desc}</div>
+                          <div className="text-xs font-bold text-text">{stg.label}</div>
+                          <div className="text-xs text-muted mt-0.5">{stg.desc}</div>
                         </div>
-                      </button>
+                      </Card>
                     );
                   })}
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-text mb-1.5">
                   Annual Turnover / Revenue Band:
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -236,10 +219,10 @@ export function RoadmapWizardModal({ isOpen, onClose, initialAnswers, onComplete
                       key={band}
                       type="button"
                       onClick={() => setAnswers({ ...answers, turnoverBand: band as any })}
-                      className={`p-3 rounded-xl text-xs font-semibold border text-center transition-all ${
+                      className={`min-h-[44px] p-3 rounded-lg text-xs font-semibold border text-center transition-colors cursor-pointer ${
                         answers.turnoverBand === band
-                          ? "bg-blue-600/20 border-blue-500 text-white"
-                          : "bg-slate-950/50 border-slate-800 text-slate-400 hover:text-white"
+                          ? "bg-accent/15 border-accent text-accent"
+                          : "bg-surface-2 border-border text-muted hover:text-text"
                       }`}
                     >
                       {band}
@@ -249,16 +232,16 @@ export function RoadmapWizardModal({ isOpen, onClose, initialAnswers, onComplete
               </div>
 
               <div className="pt-2">
-                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-xl bg-slate-950/40 border border-slate-800/80">
+                <label className="flex items-center gap-2 cursor-pointer p-3 rounded-lg bg-surface-2 border border-border">
                   <input
                     type="checkbox"
                     checked={answers.womenLed || false}
                     onChange={(e) => setAnswers({ ...answers, womenLed: e.target.checked })}
-                    className="w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-700 focus:ring-0"
+                    className="w-4 h-4 rounded text-accent bg-surface border-border focus:ring-0 cursor-pointer"
                   />
                   <div>
-                    <span className="text-xs font-bold text-white">Women-Led Enterprise</span>
-                    <p className="text-[10px] text-slate-400">Unlocks dedicated 10% reserve quotas (Stand-Up India, BIRAC, TIDE 2.0).</p>
+                    <span className="text-xs font-bold text-text">Women-Led Enterprise</span>
+                    <p className="text-xs text-muted">Unlocks dedicated 10% reserve quotas (Stand-Up India, BIRAC, TIDE 2.0).</p>
                   </div>
                 </label>
               </div>
@@ -267,31 +250,30 @@ export function RoadmapWizardModal({ isOpen, onClose, initialAnswers, onComplete
 
           {/* STEP 3: Primary Goal */}
           {step === 3 && (
-            <div className="space-y-3 animate-fadeIn">
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <div className="space-y-3">
+              <label className="block text-xs font-semibold text-text mb-1">
                 Select your primary capital & ecosystem priority:
               </label>
               {GOALS.map((g) => {
                 const isSelected = answers.primaryGoal === g.id;
                 return (
-                  <button
+                  <Card
                     key={g.id}
-                    type="button"
                     onClick={() => setAnswers({ ...answers, primaryGoal: g.id as any })}
-                    className={`w-full p-3.5 rounded-xl text-left border transition-all flex items-start gap-3 ${
+                    className={`p-3.5 rounded-lg border transition-colors flex items-start gap-3 cursor-pointer ${
                       isSelected
-                        ? "bg-blue-600/20 border-blue-500 text-white shadow-sm"
-                        : "bg-slate-950/50 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
+                        ? "bg-accent/10 border-accent"
+                        : "bg-surface-2 border-border hover:border-border/80"
                     }`}
                   >
-                    <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? "border-blue-400 bg-blue-500" : "border-slate-600"}`}>
-                      {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                    <div className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? "border-accent bg-accent" : "border-muted"}`}>
+                      {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-accent-contrast" />}
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-white">{g.label}</div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">{g.desc}</div>
+                      <div className="text-xs font-bold text-text">{g.label}</div>
+                      <div className="text-xs text-muted mt-0.5">{g.desc}</div>
                     </div>
-                  </button>
+                  </Card>
                 );
               })}
             </div>
@@ -299,12 +281,12 @@ export function RoadmapWizardModal({ isOpen, onClose, initialAnswers, onComplete
 
           {/* STEP 4: Documents Held */}
           {step === 4 && (
-            <div className="space-y-4 animate-fadeIn">
+            <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-text mb-1">
                   Which documents or registrations do you currently hold?
                 </label>
-                <p className="text-[11px] text-slate-400 mb-3">
+                <p className="text-xs text-muted mb-3">
                   The roadmap automatically marks eligible schemes and inserts registration steps for missing prerequisites.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -315,69 +297,67 @@ export function RoadmapWizardModal({ isOpen, onClose, initialAnswers, onComplete
                         key={key}
                         type="button"
                         onClick={() => toggleDocument(key)}
-                        className={`p-3 rounded-xl border text-left text-xs transition-all flex items-center gap-2.5 ${
+                        className={`min-h-[44px] p-3 rounded-lg border text-left text-xs transition-colors flex items-center gap-2.5 cursor-pointer ${
                           isChecked
-                            ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
-                            : "bg-slate-950/50 border-slate-800 text-slate-400 hover:border-slate-700"
+                            ? "bg-ok/10 border-ok text-ok font-semibold"
+                            : "bg-surface-2 border-border text-muted hover:text-text hover:border-border/80"
                         }`}
                       >
-                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${isChecked ? "bg-emerald-500 border-emerald-500 text-white" : "border-slate-600"}`}>
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${isChecked ? "bg-ok border-ok text-surface" : "border-muted"}`}>
                           {isChecked && <CheckCircle2 className="w-3.5 h-3.5" />}
                         </div>
-                        <span className="text-[11px] font-medium leading-tight">{label}</span>
+                        <span className="text-xs leading-tight">{label}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300 space-y-1">
-                <div className="flex items-center gap-1.5 font-bold">
-                  <ShieldCheck className="w-4 h-4 text-blue-400" />
+              <Card className="p-3.5 bg-surface-2 border-border text-xs text-muted space-y-1">
+                <div className="flex items-center gap-1.5 font-bold text-text">
+                  <ShieldCheck className="w-4 h-4 text-accent" />
                   <span>Explainable & Rule-Based Match</span>
                 </div>
-                <p className="text-[11px] text-blue-300/80 leading-relaxed">
+                <p className="text-xs text-muted leading-relaxed">
                   Your customized roadmap will map eligible central and state schemes into a 3-phase temporal execution plan (Now, Next, Later) with links and document checklists.
                 </p>
-              </div>
+              </Card>
             </div>
           )}
         </div>
 
         {/* Wizard Footer Controls */}
-        <div className="p-4 sm:p-6 border-t border-slate-800 bg-slate-900/60 flex items-center justify-between shrink-0">
+        <div className="pt-3 border-t border-border flex items-center justify-between">
           {step > 1 ? (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
               onClick={() => setStep(step - 1)}
-              className="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 text-xs font-semibold flex items-center gap-1.5 transition-colors"
             >
-              <ArrowLeft className="w-3.5 h-3.5" /> Back
-            </button>
+              <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Back
+            </Button>
           ) : (
             <div />
           )}
 
           {step < 4 ? (
-            <button
-              type="button"
+            <Button
+              variant="primary"
               onClick={() => setStep(step + 1)}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/30 flex items-center gap-2 transition-all"
             >
-              Next Step <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+              <span>Next Step</span>
+              <ArrowRight className="w-3.5 h-3.5 ml-1" />
+            </Button>
           ) : (
-            <button
-              type="button"
+            <Button
+              variant="primary"
               onClick={handleFinish}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-600/30 flex items-center gap-2 transition-all active:scale-[0.99]"
             >
-              <Sparkles className="w-4 h-4" /> Generate My Roadmap
-            </button>
+              <Sparkles className="w-4 h-4 mr-1" />
+              <span>Generate My Roadmap</span>
+            </Button>
           )}
         </div>
-
       </div>
-    </div>
+    </Modal>
   );
 }

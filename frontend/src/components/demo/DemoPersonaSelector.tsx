@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
-import { Sparkles, UserCheck, ArrowRight, CheckCircle2, Sprout, Cpu, Sun } from "lucide-react";
+import { Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
 import { DemoPersona } from "@/types";
+import { Card } from "@/components/ui/Card";
+import { Chip } from "@/components/ui/Chip";
 
 export const DEMO_PERSONAS: DemoPersona[] = [
   {
@@ -72,21 +74,21 @@ interface Props {
 
 export function DemoPersonaSelector({ activePersonaSlug, onSelectPersona, compact = false }: Props) {
   return (
-    <div className={`p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-purple-950/40 border border-blue-500/25 ${compact ? "" : "my-4"}`}>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3.5">
+    <Card className={`border-border bg-surface ${compact ? "p-3 sm:p-4" : "my-4 p-4 sm:p-5"}`}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
-          <span className="p-1.5 rounded-lg bg-blue-500/20 text-blue-400">
+          <span className="p-1.5 rounded-md bg-accent/10 text-accent">
             <Sparkles className="w-4 h-4" />
           </span>
           <div>
-            <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-              Instant Interactive Demo Mode
-              <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                NO SIGN-UP REQUIRED
-              </span>
-            </h3>
-            <p className="text-[11px] text-slate-400">
-              Pick a real Indian founder profile to test how the engine customizes roadmaps in &lt;1 second:
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs sm:text-sm font-bold text-text">
+                Instant Interactive Demo Mode
+              </h3>
+              <Chip variant="unknown" label="NO SIGN-UP REQUIRED" />
+            </div>
+            <p className="text-xs text-muted mt-0.5">
+              Pick a sample Indian founder profile to test how the engine customizes recommendations and roadmaps:
             </p>
           </div>
         </div>
@@ -99,39 +101,37 @@ export function DemoPersonaSelector({ activePersonaSlug, onSelectPersona, compac
             <button
               key={p.id}
               onClick={() => onSelectPersona(p)}
-              className={`p-3.5 rounded-xl text-left transition-all border relative flex flex-col justify-between ${
+              className={`p-3.5 rounded-xl text-left transition-colors border relative flex flex-col justify-between min-h-[44px] focus:outline-none focus:ring-2 focus:ring-accent ${
                 isSelected
-                  ? "bg-blue-600/20 border-blue-400 shadow-md shadow-blue-500/20 scale-[1.01]"
-                  : "bg-slate-900/70 hover:bg-slate-800/80 border-slate-800 hover:border-slate-700 text-slate-300"
+                  ? "bg-surface border-accent ring-1 ring-accent shadow-xs"
+                  : "bg-surface-2 hover:bg-surface border-border text-text"
               }`}
             >
               <div>
                 <div className="flex items-center justify-between gap-1 mb-1.5">
-                  <span className="text-lg">{p.avatar}</span>
+                  <span className="text-xl">{p.avatar}</span>
                   {isSelected ? (
-                    <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                      <CheckCircle2 className="w-3 h-3" /> Active Profile
-                    </span>
+                    <Chip variant="met" icon={<CheckCircle2 className="w-3.5 h-3.5" />} label="Active Profile" />
                   ) : (
-                    <span className="text-[10px] text-slate-400 hover:text-white flex items-center gap-0.5 font-medium">
-                      Try This <ArrowRight className="w-3 h-3" />
+                    <span className="text-xs text-muted hover:text-text flex items-center gap-1 font-semibold">
+                      Try This <ArrowRight className="w-3.5 h-3.5" />
                     </span>
                   )}
                 </div>
-                <div className="text-xs font-bold text-white tracking-tight">
+                <div className="text-xs font-bold text-text tracking-tight">
                   {p.name}
                 </div>
-                <div className="text-[10px] font-semibold text-blue-400 mb-1">
+                <div className="text-xs font-medium text-accent mb-1">
                   {p.tagline}
                 </div>
-                <p className="text-[11px] text-slate-400 leading-snug line-clamp-2">
+                <p className="text-xs text-muted leading-relaxed line-clamp-2">
                   {p.description}
                 </p>
               </div>
 
-              <div className="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
-                <span className="truncate max-w-[150px]">{p.founderName}</span>
-                <span className="font-mono text-emerald-400 font-bold">
+              <div className="mt-3 pt-2 border-t border-border flex items-center justify-between text-xs text-muted">
+                <span className="truncate max-w-[150px] font-medium">{p.founderName}</span>
+                <span className="font-mono text-ok font-bold">
                   {p.answers.primaryGoal === "Idea Validation / Prototype" ? "₹10L Grant" : p.answers.primaryGoal === "R&D Grant / Product MVP" ? "₹50L Seed" : "₹10Cr Debt"}
                 </span>
               </div>
@@ -139,6 +139,6 @@ export function DemoPersonaSelector({ activePersonaSlug, onSelectPersona, compac
           );
         })}
       </div>
-    </div>
+    </Card>
   );
 }

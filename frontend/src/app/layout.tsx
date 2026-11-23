@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Manrope } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/context/ThemeProvider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
@@ -22,8 +23,12 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                var theme = localStorage.getItem('govdash_theme') || localStorage.getItem('theme');
+                var theme = localStorage.getItem('govdash_theme');
                 if (theme === 'light') {
+                  document.documentElement.classList.remove('dark');
+                } else if (theme === 'dark') {
+                  document.documentElement.classList.add('dark');
+                } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
                   document.documentElement.classList.remove('dark');
                 } else {
                   document.documentElement.classList.add('dark');
@@ -34,7 +39,9 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} ${manrope.variable} font-sans antialiased`} suppressHydrationWarning>
-        {children}
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

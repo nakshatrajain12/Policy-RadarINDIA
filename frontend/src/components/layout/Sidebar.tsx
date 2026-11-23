@@ -7,12 +7,10 @@ import {
   BarChart3, 
   Unlock, 
   Bell, 
-  Database,
-  ExternalLink,
-  Sparkles,
-  Award,
-  ShieldCheck,
-  FileText
+  Sparkles, 
+  Award, 
+  ShieldCheck, 
+  FileText 
 } from "lucide-react";
 
 export type NavTab = "dashboard" | "roadmap" | "schemes" | "analytics" | "stories" | "compliance" | "unlock" | "alerts";
@@ -37,9 +35,9 @@ export function Sidebar({ activeTab, onTabChange, totalSchemesCount, onOpenOnePa
   ];
 
   return (
-    <aside className="w-64 shrink-0 hidden lg:flex flex-col justify-between border-r border-slate-200 dark:border-slate-800/80 bg-white/60 dark:bg-slate-950/40 p-4 transition-colors">
+    <aside className="w-64 shrink-0 hidden lg:flex flex-col justify-between border-r border-border bg-surface p-4 transition-colors">
       <div className="space-y-1.5">
-        <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <div className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-muted">
           Intelligence Workspace
         </div>
         {navItems.map((item) => {
@@ -49,22 +47,22 @@ export function Sidebar({ activeTab, onTabChange, totalSchemesCount, onOpenOnePa
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-semibold transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-accent ${
                 isActive
-                  ? "bg-blue-600/10 dark:bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900/60 border border-transparent"
+                  ? "bg-accent/10 text-accent border border-accent/30 font-bold"
+                  : "text-muted hover:text-text hover:bg-surface-2 border border-transparent"
               }`}
             >
               <div className="flex items-center gap-3">
-                <Icon className={`w-4 h-4 ${isActive ? "text-blue-600 dark:text-blue-400" : "text-slate-500 dark:text-slate-400"}`} />
+                <Icon className={`w-4 h-4 ${isActive ? "text-accent" : "text-muted"}`} />
                 <span>{item.label}</span>
               </div>
               {item.badge && (
                 <span
-                  className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                  className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
                     isActive
-                      ? "bg-blue-500/20 text-blue-700 dark:text-blue-300"
-                      : "bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400"
+                      ? "bg-accent/20 text-accent"
+                      : "bg-surface-2 text-muted border border-border"
                   }`}
                 >
                   {item.badge}
@@ -79,9 +77,9 @@ export function Sidebar({ activeTab, onTabChange, totalSchemesCount, onOpenOnePa
           <div className="pt-2">
             <button
               onClick={onOpenOnePager}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 transition-all"
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-xs font-semibold text-ok bg-ok/10 hover:bg-ok/20 border border-ok/20 transition-colors min-h-[44px] focus:outline-none focus:ring-2 focus:ring-ok"
             >
-              <FileText className="w-4 h-4" />
+              <FileText className="w-4 h-4 text-ok" />
               <span>Download One-Pager</span>
             </button>
           </div>
@@ -89,20 +87,20 @@ export function Sidebar({ activeTab, onTabChange, totalSchemesCount, onOpenOnePa
       </div>
 
       {/* Database & System Health Widget */}
-      <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50 space-y-2">
+      <div className="p-3.5 rounded-xl border border-border bg-surface-2 space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-300">Registry Synced</span>
+            <span className="w-2 h-2 rounded-full bg-ok animate-pulse" />
+            <span className="text-xs font-bold text-text">Registry Synced</span>
           </div>
-          <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">100% Verified</span>
+          <span className="text-xs font-mono text-ok font-semibold">100% Verified</span>
         </div>
-        <div className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
+        <div className="text-xs text-muted leading-relaxed">
           Central & 28 State Startup Missions with live source grounding and gazette references.
         </div>
-        <div className="pt-1 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
+        <div className="pt-1.5 border-t border-border flex items-center justify-between text-xs text-muted">
           <span>Latency: ~38ms</span>
-          <span className="font-mono text-slate-500 dark:text-slate-400">v2.4-BTP</span>
+          <span className="font-mono text-muted">v2.4-BTP</span>
         </div>
       </div>
     </aside>

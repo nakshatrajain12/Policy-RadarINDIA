@@ -3,29 +3,22 @@
 import React, { useState, useMemo } from "react";
 import { 
   Search, 
-  Filter, 
   LayoutGrid, 
   List, 
-  ExternalLink, 
-  Coins, 
-  Building2, 
-  Layers, 
-  Sparkles, 
-  ShieldCheck, 
+  Download, 
+  Scale, 
   Check, 
   X, 
-  ArrowUpDown, 
-  Download, 
-  CheckCircle2,
-  Scale,
-  Plus,
-  Trash2,
   Info,
-  FileText
+  ShieldCheck,
+  Layers
 } from "lucide-react";
 import { Scheme, FounderProfile } from "@/types";
 import { SchemeComparisonModal } from "./SchemeComparisonModal";
 import { formatSchemeGrantDetails } from "@/lib/schemeFormatters";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
 
 interface Props {
   schemes: Scheme[];
@@ -39,7 +32,7 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
   const [selectedStage, setSelectedStage] = useState("All");
   const [selectedGeo, setSelectedGeo] = useState("All");
   const [selectedFundingType, setSelectedFundingType] = useState("All");
-  const [dpiitFilter, setDpiitFilter] = useState("All"); // All | required | not_required
+  const [dpiitFilter, setDpiitFilter] = useState("All");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [sortBy, setSortBy] = useState<"funding_desc" | "funding_asc" | "name">("funding_desc");
 
@@ -75,7 +68,6 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
   // Filtering Logic
   const filteredSchemes = useMemo(() => {
     return schemes.filter((s) => {
-      // Search
       if (searchTerm) {
         const query = searchTerm.toLowerCase();
         const inName = s.scheme_name.toLowerCase().includes(query);
@@ -84,21 +76,18 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
         if (!inName && !inMin && !inDesc) return false;
       }
 
-      // Sector
       if (selectedSector !== "All") {
         const secStr = String(s.sector_eligibility || "").toLowerCase();
         const target = selectedSector.toLowerCase().split(" ")[0];
         if (!secStr.includes("all") && !secStr.includes(target)) return false;
       }
 
-      // Stage
       if (selectedStage !== "All") {
         const stStr = String(s.startup_stage || "").toLowerCase();
         const target = selectedStage.toLowerCase();
         if (!stStr.includes(target) && !stStr.includes("all")) return false;
       }
 
-      // Geo
       if (selectedGeo !== "All") {
         const geoStr = (s.geographic_restriction || "").toLowerCase();
         if (selectedGeo === "Pan-India") {
@@ -108,13 +97,11 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
         }
       }
 
-      // Funding Type
       if (selectedFundingType !== "All") {
         const ftype = (s.funding_type || "").toLowerCase();
         if (!ftype.includes(selectedFundingType.toLowerCase())) return false;
       }
 
-      // DPIIT Filter
       if (dpiitFilter === "required" && !s.dpiit_required) return false;
       if (dpiitFilter === "not_required" && s.dpiit_required) return false;
 
@@ -140,7 +127,6 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
     setSortBy("funding_desc");
   };
 
-  // Compare Toggle Logic (2 to 3 schemes maximum)
   const toggleCompare = (scheme: Scheme, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setCompareWarning(null);
@@ -163,7 +149,6 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
     setCompareList(compareList.filter((s) => s.id !== id));
   };
 
-  // Robust CSV Exporter with UTF-8 BOM
   const handleExportCSV = () => {
     const headers = [
       "Scheme Name",
@@ -223,14 +208,14 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn pb-24">
+    <div className="space-y-6 animate-fadeIn pb-24 text-text">
       {/* ── Explorer Header & Search Bar ──────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-950 dark:text-white tracking-tight font-headline">
+          <h1 className="text-2xl font-bold text-text tracking-tight font-headline">
             Central & State Schemes Explorer
           </h1>
-          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+          <p className="mt-1 text-xs text-muted">
             Comprehensive verified database of {schemes.length || 193} Indian government funding frameworks. Select any 2 or 3 schemes to compare side-by-side.
           </p>
         </div>
@@ -238,20 +223,21 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
         {/* View Mode & Export Actions */}
         <div className="flex items-center gap-2.5">
           {compareList.length >= 2 && (
-            <button
+            <Button
+              variant="primary"
               onClick={() => setShowCompareModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition-all animate-bounce"
             >
-              <Scale className="w-4 h-4" />
+              <Scale className="w-4 h-4 mr-1.5" />
               Compare ({compareList.length})
-            </button>
+            </Button>
           )}
 
-          <div className="flex items-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1">
+          <div className="flex items-center bg-surface-2 border border-border rounded-lg p-0.5">
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-1.5 rounded-lg text-xs transition-colors ${
-                viewMode === "grid" ? "bg-blue-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+              aria-label="Card Grid View"
+              className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${
+                viewMode === "grid" ? "bg-accent text-accent-contrast shadow-sm" : "text-muted hover:text-text"
               }`}
               title="Card Grid View"
             >
@@ -259,8 +245,9 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
             </button>
             <button
               onClick={() => setViewMode("table")}
-              className={`p-1.5 rounded-lg text-xs transition-colors ${
-                viewMode === "table" ? "bg-blue-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+              aria-label="Table View"
+              className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md text-xs transition-colors cursor-pointer ${
+                viewMode === "table" ? "bg-accent text-accent-contrast shadow-sm" : "text-muted hover:text-text"
               }`}
               title="Terminal Table View"
             >
@@ -268,33 +255,34 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
             </button>
           </div>
 
-          <button
+          <Button
+            variant="secondary"
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors shadow-sm"
           >
-            <Download className="w-3.5 h-3.5 text-blue-500" />
+            <Download className="w-3.5 h-3.5 mr-1.5 text-accent" />
             Export CSV ({filteredSchemes.length})
-          </button>
+          </Button>
         </div>
       </div>
 
-      {/* ── Search & Filter Controls (Font Size Fixed) ───────────────── */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+      {/* ── Search & Filter Controls ───────────────── */}
+      <Card className="p-4 sm:p-5 bg-surface border-border space-y-4">
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Main Search Input */}
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
             <input 
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by scheme name, ministry, keywords (e.g. BIRAC, ELEVATE, drone, prototype)..."
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium text-slate-950 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full min-h-[44px] pl-10 pr-10 py-2.5 bg-surface-2 border border-border rounded-lg text-xs sm:text-sm font-medium text-text placeholder-muted focus:outline-none focus:border-accent"
             />
             {searchTerm && (
               <button 
                 onClick={() => setSearchTerm("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-white"
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 -translate-y-1/2 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted hover:text-text cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -306,7 +294,7 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
             <select
               value={sortBy}
               onChange={(e: any) => setSortBy(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500"
+              className="w-full min-h-[44px] px-3 py-2 bg-surface-2 border border-border rounded-lg text-xs sm:text-sm font-medium text-text focus:outline-none focus:border-accent"
             >
               <option value="funding_desc">Max Funding: High to Low</option>
               <option value="funding_asc">Max Funding: Low to High</option>
@@ -315,17 +303,17 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
           </div>
         </div>
 
-        {/* Filter Dropdowns Grid with Enhanced Font Sizes */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-200 dark:border-slate-800/80">
+        {/* Filter Dropdowns Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-border">
           {/* Sector Filter */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5">
               Sector
             </label>
             <select
               value={selectedSector}
               onChange={(e) => setSelectedSector(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500"
+              className="w-full min-h-[44px] px-2.5 py-2 bg-surface-2 border border-border rounded-lg text-xs text-text focus:outline-none focus:border-accent"
             >
               {sectorsList.map((sec) => (
                 <option key={sec} value={sec}>{sec}</option>
@@ -335,13 +323,13 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
 
           {/* Stage Filter */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5">
               Stage
             </label>
             <select
               value={selectedStage}
               onChange={(e) => setSelectedStage(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500"
+              className="w-full min-h-[44px] px-2.5 py-2 bg-surface-2 border border-border rounded-lg text-xs text-text focus:outline-none focus:border-accent"
             >
               {stagesList.map((st) => (
                 <option key={st} value={st}>{st}</option>
@@ -351,13 +339,13 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
 
           {/* State / UT Filter */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5">
               State / UT
             </label>
             <select
               value={selectedGeo}
               onChange={(e) => setSelectedGeo(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500"
+              className="w-full min-h-[44px] px-2.5 py-2 bg-surface-2 border border-border rounded-lg text-xs text-text focus:outline-none focus:border-accent"
             >
               {geosList.map((geo) => (
                 <option key={geo} value={geo}>{geo}</option>
@@ -367,13 +355,13 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
 
           {/* DPIIT Requirement */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted mb-1.5">
               DPIIT Status
             </label>
             <select
               value={dpiitFilter}
               onChange={(e) => setDpiitFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500"
+              className="w-full min-h-[44px] px-2.5 py-2 bg-surface-2 border border-border rounded-lg text-xs text-text focus:outline-none focus:border-accent"
             >
               <option value="All">All Frameworks</option>
               <option value="not_required">No DPIIT Required (Open)</option>
@@ -382,45 +370,42 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
           </div>
         </div>
 
-        {/* Filter Results Summary & Scheme Count Display */}
-        <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
-          <div className="text-sm font-medium">
-            Showing <strong className="font-extrabold text-blue-600 dark:text-blue-400">{filteredSchemes.length}</strong> of <strong className="font-extrabold text-slate-950 dark:text-white">{schemes.length || 193}</strong> schemes
+        {/* Filter Results Summary */}
+        <div className="flex items-center justify-between text-xs text-muted pt-2 border-t border-border">
+          <div className="text-xs font-medium">
+            Showing <strong className="font-bold text-accent">{filteredSchemes.length}</strong> of <strong className="font-bold text-text">{schemes.length || 193}</strong> schemes
             {(selectedSector !== "All" || selectedStage !== "All" || selectedGeo !== "All" || searchTerm || dpiitFilter !== "All") && (
-              <span className="text-amber-600 dark:text-amber-400 ml-2 font-semibold">(filtered)</span>
+              <span className="text-warn ml-2 font-semibold">(filtered)</span>
             )}
           </div>
           {(selectedSector !== "All" || selectedStage !== "All" || selectedGeo !== "All" || searchTerm || dpiitFilter !== "All") && (
             <button
               onClick={resetFilters}
-              className="text-xs font-bold text-slate-500 hover:text-blue-600 dark:hover:text-white underline cursor-pointer"
+              className="min-h-[44px] px-2 text-xs font-semibold text-accent hover:underline cursor-pointer"
             >
               Reset Filters
             </button>
           )}
         </div>
-      </div>
+      </Card>
 
-      {/* ── Educational Banner: WHAT IS A SCHEME DOSSIER? ───────────── */}
-      <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 text-xs text-slate-700 dark:text-slate-300 flex items-start gap-2.5">
-        <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+      {/* ── Educational Banner ───────────── */}
+      <Card className="p-3.5 bg-surface-2 border-border text-xs text-muted flex items-start gap-2.5">
+        <Info className="w-4 h-4 text-accent shrink-0 mt-0.5" />
         <div className="leading-relaxed">
-          <strong className="text-slate-900 dark:text-white">What is a Scheme Dossier?</strong> A verified government policy intelligence document containing full gazette rules, individual startup ticket sizes, required statutory documents, milestone tranches, and direct application links.
+          <strong className="text-text">What is a Scheme Dossier?</strong> A verified government policy intelligence document containing full gazette rules, individual startup ticket sizes, required statutory documents, milestone tranches, and direct application links.
         </div>
-      </div>
+      </Card>
 
       {/* ── Schemes Render: Grid or Table ────────────────────────────── */}
       {filteredSchemes.length === 0 ? (
-        <div className="p-12 text-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 space-y-3">
-          <Layers className="w-8 h-8 text-slate-400 mx-auto" />
-          <p className="text-sm text-slate-700 dark:text-slate-300">No schemes found matching the selected criteria.</p>
-          <button
-            onClick={resetFilters}
-            className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500"
-          >
+        <Card className="p-12 text-center border-border bg-surface space-y-3">
+          <Layers className="w-8 h-8 text-muted mx-auto" />
+          <p className="text-xs text-muted">No schemes found matching the selected criteria.</p>
+          <Button variant="primary" onClick={resetFilters}>
             Clear Filters
-          </button>
-        </div>
+          </Button>
+        </Card>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredSchemes.map((scheme, idx) => {
@@ -428,52 +413,52 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
             const isCompared = compareList.some((s) => s.id === scheme.id);
 
             return (
-              <div
+              <Card
                 key={scheme.id || idx}
                 onClick={() => onSelectScheme(scheme)}
-                className={`group relative p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                className={`group relative p-5 border transition-all cursor-pointer flex flex-col justify-between ${
                   isCompared 
-                    ? "border-blue-500 bg-blue-50/30 dark:bg-blue-950/20 ring-2 ring-blue-500/40 shadow-lg" 
-                    : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/5"
+                    ? "border-accent bg-accent/5 ring-1 ring-accent" 
+                    : "border-border bg-surface hover:border-accent"
                 }`}
               >
                 <div>
-                  {/* Top Badges & Compare Toggle Checkbox */}
+                  {/* Top Badges & Compare Toggle */}
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
+                      <Chip variant="info" size="sm">
                         {details.grantTypeBadge}
-                      </span>
+                      </Chip>
                       {scheme.dpiit_required ? (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20 flex items-center gap-1">
-                          <ShieldCheck className="w-3 h-3" /> DPIIT
-                        </span>
+                        <Chip variant="warn" size="sm">
+                          <ShieldCheck className="w-3 h-3 mr-1" /> DPIIT
+                        </Chip>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                        <Chip variant="met" size="sm">
                           Open
-                        </span>
+                        </Chip>
                       )}
                     </div>
 
-                    {/* Compare Selection Checkbox / Button */}
+                    {/* Compare Selection Button */}
                     <button
                       type="button"
                       onClick={(e) => toggleCompare(scheme, e)}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0 ${
+                      className={`min-h-[44px] flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold transition-colors shrink-0 cursor-pointer ${
                         isCompared 
-                          ? "bg-blue-600 text-white shadow-sm" 
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-500/10 hover:text-blue-600"
+                          ? "bg-accent text-accent-contrast" 
+                          : "bg-surface-2 border border-border text-muted hover:text-text"
                       }`}
-                      title="Select for side-by-side comparison (2-3 schemes)"
+                      title="Select for side-by-side comparison"
                     >
                       {isCompared ? (
                         <>
-                          <Check className="w-3 h-3 stroke-[3]" />
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
                           <span>Added</span>
                         </>
                       ) : (
                         <>
-                          <Scale className="w-3 h-3" />
+                          <Scale className="w-3.5 h-3.5" />
                           <span>Compare</span>
                         </>
                       )}
@@ -481,68 +466,66 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-base font-bold text-slate-950 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2 mb-1.5">
+                  <h3 className="text-sm sm:text-base font-bold text-text group-hover:text-accent transition-colors line-clamp-2 mb-1.5">
                     {scheme.scheme_name}
                   </h3>
 
                   {/* Ministry */}
-                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mb-3">
+                  <p className="text-xs text-muted line-clamp-1 mb-3">
                     {scheme.ministry || "Central Ministry / State Agency"}
                   </p>
 
                   {/* Detailed Funding Breakdown Box */}
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 mb-3 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider">
-                        Individual Startup Grant
-                      </span>
+                  <div className="p-3 rounded-lg bg-surface-2 border border-border mb-3 space-y-1">
+                    <div className="text-xs uppercase font-semibold text-muted">
+                      Individual Startup Grant
                     </div>
-                    <div className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 font-headline leading-tight">
+                    <div className="text-sm font-bold text-ok font-headline leading-tight">
                       {details.individualTicket}
                     </div>
                     {details.macroCeilingDisplay && (
-                      <div className="text-[10px] font-medium text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
+                      <div className="text-xs text-muted pt-1 border-t border-border">
                         {details.macroCeilingDisplay}
                       </div>
                     )}
                   </div>
 
                   {/* Short Summary */}
-                  <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 mb-4 leading-relaxed">
+                  <p className="text-xs text-muted line-clamp-2 mb-4 leading-relaxed">
                     {scheme.nlp_summary || "Comprehensive central and state government financial assistance and support initiative."}
                   </p>
                 </div>
 
                 {/* Footer */}
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                  <span className="truncate max-w-[140px] font-medium">
+                <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted">
+                  <span className="truncate max-w-[140px]">
                     📍 {scheme.geographic_restriction || "Pan-India"}
                   </span>
-                  <span className="font-bold text-blue-600 dark:text-blue-400 group-hover:underline flex items-center gap-1">
-                    View Scheme Dossier →
+                  <span className="font-semibold text-accent group-hover:underline flex items-center gap-1">
+                    View Dossier →
                   </span>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
       ) : (
         /* Table View */
-        <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-white dark:bg-slate-900">
+        <div className="border border-border rounded-xl overflow-hidden bg-surface">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
-              <thead className="bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <table className="w-full text-left text-xs text-text">
+              <thead className="bg-surface-2 border-b border-border text-xs font-bold uppercase tracking-wider text-muted">
                 <tr>
                   <th className="py-3 px-3 text-center w-16">Compare</th>
                   <th className="py-3 px-4">Scheme Name</th>
                   <th className="py-3 px-4">Ministry / Department</th>
                   <th className="py-3 px-4">Grant Type & Structure</th>
-                  <th className="py-3 px-4 text-right">Individual Startup Ticket</th>
+                  <th className="py-3 px-4 text-right">Individual Ticket</th>
                   <th className="py-3 px-4 text-center">Geography</th>
                   <th className="py-3 px-4 text-center">DPIIT</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-sans">
+              <tbody className="divide-y divide-border font-sans">
                 {filteredSchemes.map((scheme, idx) => {
                   const details = formatSchemeGrantDetails(scheme);
                   const isCompared = compareList.some((s) => s.id === scheme.id);
@@ -551,8 +534,8 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
                     <tr
                       key={scheme.id || idx}
                       onClick={() => onSelectScheme(scheme)}
-                      className={`hover:bg-slate-50 dark:hover:bg-slate-950/60 cursor-pointer transition-colors ${
-                        isCompared ? "bg-blue-50/40 dark:bg-blue-950/30" : ""
+                      className={`hover:bg-surface-2/60 cursor-pointer transition-colors ${
+                        isCompared ? "bg-accent/10" : ""
                       }`}
                     >
                       <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
@@ -560,35 +543,29 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
                           type="checkbox"
                           checked={isCompared}
                           onChange={() => toggleCompare(scheme)}
-                          className="rounded text-blue-600 focus:ring-0 cursor-pointer"
+                          className="rounded text-accent focus:ring-0 cursor-pointer"
                         />
                       </td>
-                      <td className="py-3 px-4 font-bold text-slate-950 dark:text-white max-w-xs truncate">
+                      <td className="py-3 px-4 font-bold text-text max-w-xs truncate">
                         {scheme.scheme_name}
                       </td>
-                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400 max-w-[200px] truncate">
+                      <td className="py-3 px-4 text-muted max-w-[200px] truncate">
                         {scheme.ministry || "Central Ministry"}
                       </td>
                       <td className="py-3 px-4">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
-                          {details.grantTypeBadge}
-                        </span>
+                        <Chip variant="info" size="sm">{details.grantTypeBadge}</Chip>
                       </td>
-                      <td className="py-3 px-4 text-right font-extrabold text-emerald-600 dark:text-emerald-400 font-headline">
+                      <td className="py-3 px-4 text-right font-bold text-ok font-headline">
                         {details.individualTicket}
                       </td>
-                      <td className="py-3 px-4 text-center text-slate-500 dark:text-slate-400 text-[11px]">
+                      <td className="py-3 px-4 text-center text-muted text-xs">
                         {scheme.geographic_restriction || "Pan-India"}
                       </td>
                       <td className="py-3 px-4 text-center">
                         {scheme.dpiit_required ? (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/10 text-purple-700 dark:text-purple-300">
-                            Required
-                          </span>
+                          <Chip variant="warn" size="sm">Required</Chip>
                         ) : (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] text-emerald-700 dark:text-emerald-400">
-                            Open
-                          </span>
+                          <Chip variant="met" size="sm">Open</Chip>
                         )}
                       </td>
                     </tr>
@@ -600,26 +577,26 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
         </div>
       )}
 
-      {/* ── Floating Comparison Dock (Sticky Bottom Bar) ─────────────── */}
+      {/* ── Floating Comparison Dock (Sticky Bottom Bar, No Glass/Blur) ─────────────── */}
       {compareList.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-2xl w-[92%] sm:w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-300 dark:border-slate-700 p-3 sm:p-4 rounded-2xl shadow-2xl animate-fadeInUp flex flex-col sm:flex-row items-center justify-between gap-3">
-          
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-2xl w-[92%] sm:w-full bg-surface border border-border p-3 sm:p-4 rounded-xl shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
           {/* Selected Scheme Badges */}
           <div className="flex-1 min-w-0 flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white shrink-0">
-              <Scale className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <div className="flex items-center gap-1.5 text-xs font-bold text-text shrink-0">
+              <Scale className="w-4 h-4 text-accent" />
               <span>Compare ({compareList.length}/3):</span>
             </div>
 
             {compareList.map((s) => (
               <span 
                 key={s.id}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-slate-800 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-slate-700 text-xs font-semibold max-w-[160px] truncate"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-2 text-text border border-border text-xs font-medium max-w-[160px] truncate"
               >
                 <span className="truncate">{s.scheme_name}</span>
                 <button 
                   onClick={(e) => removeCompare(s.id, e)}
-                  className="hover:text-rose-500 p-0.5"
+                  aria-label={`Remove ${s.scheme_name}`}
+                  className="hover:text-danger p-0.5 cursor-pointer"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -627,7 +604,7 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
             ))}
 
             {compareWarning && (
-              <span className="text-[11px] font-semibold text-rose-500 ml-1">
+              <span className="text-xs font-medium text-danger ml-1">
                 {compareWarning}
               </span>
             )}
@@ -635,25 +612,21 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 shrink-0">
-            <button
+            <Button
+              variant="ghost"
               onClick={() => setCompareList([])}
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
             >
               Clear
-            </button>
+            </Button>
 
-            <button
+            <Button
+              variant="primary"
               onClick={() => setShowCompareModal(true)}
               disabled={compareList.length < 2}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 ${
-                compareList.length >= 2
-                  ? "bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/25 cursor-pointer animate-pulse"
-                  : "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
-              }`}
             >
-              <Scale className="w-4 h-4" />
+              <Scale className="w-4 h-4 mr-1" />
               <span>{compareList.length < 2 ? "Select 1 more" : "Compare Now"}</span>
-            </button>
+            </Button>
           </div>
         </div>
       )}

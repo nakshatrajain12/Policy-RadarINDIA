@@ -3,19 +3,16 @@
 import React, { useState } from "react";
 import { 
   ShieldCheck, 
-  X, 
   ExternalLink, 
-  Building2, 
-  FileText, 
   CheckCircle2, 
   Sparkles, 
-  Scale, 
   MapPin, 
-  Award,
-  ChevronRight,
-  BookOpen
+  FileText
 } from "lucide-react";
 import { FounderProfile } from "@/types";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 
 interface Props {
   isOpen: boolean;
@@ -201,44 +198,22 @@ export function StateComplianceGuideModal({ isOpen, onClose, userProfile }: Prop
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-4xl max-h-[92vh] flex flex-col bg-slate-900 dark:bg-slate-900 border border-slate-750 rounded-2xl shadow-2xl overflow-hidden text-slate-200">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800 bg-slate-950/80">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center justify-center shrink-0">
-              <Scale className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-white tracking-tight">Startup Licenses & State Compliance Guide</h2>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30">
-                  Regulatory Intelligence
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Official licensing roadmaps, DPIIT tax exemptions, and state-specific nodal registrations for {userProfile.state}.
-              </p>
-            </div>
-          </div>
-
-          <button 
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Startup Licenses & State Compliance Guide"
+      subtitle={`Official licensing roadmaps, DPIIT tax exemptions, and state-specific nodal registrations for ${userProfile.state}.`}
+      maxWidth="max-w-4xl"
+    >
+      <div className="flex flex-col h-full space-y-4">
         {/* Tab Switcher */}
-        <div className="flex border-b border-slate-800 bg-slate-950/40 px-6">
+        <div className="flex border-b border-border bg-surface-2 -mx-6 -mt-4 px-6 pt-2">
           <button
             onClick={() => setActiveTab("dpiit")}
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors flex items-center gap-2 ${
+            className={`min-h-[44px] py-2 px-4 text-xs font-semibold border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === "dpiit" 
-                ? "border-blue-500 text-blue-400" 
-                : "border-transparent text-slate-400 hover:text-slate-200"
+                ? "border-accent text-accent" 
+                : "border-transparent text-muted hover:text-text"
             }`}
           >
             <ShieldCheck className="w-4 h-4" />
@@ -246,10 +221,10 @@ export function StateComplianceGuideModal({ isOpen, onClose, userProfile }: Prop
           </button>
           <button
             onClick={() => setActiveTab("state")}
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors flex items-center gap-2 ${
+            className={`min-h-[44px] py-2 px-4 text-xs font-semibold border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === "state" 
-                ? "border-blue-500 text-blue-400" 
-                : "border-transparent text-slate-400 hover:text-slate-200"
+                ? "border-accent text-accent" 
+                : "border-transparent text-muted hover:text-text"
             }`}
           >
             <MapPin className="w-4 h-4" />
@@ -257,10 +232,10 @@ export function StateComplianceGuideModal({ isOpen, onClose, userProfile }: Prop
           </button>
           <button
             onClick={() => setActiveTab("statutory")}
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition-colors flex items-center gap-2 ${
+            className={`min-h-[44px] py-2 px-4 text-xs font-semibold border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
               activeTab === "statutory" 
-                ? "border-blue-500 text-blue-400" 
-                : "border-transparent text-slate-400 hover:text-slate-200"
+                ? "border-accent text-accent" 
+                : "border-transparent text-muted hover:text-text"
             }`}
           >
             <FileText className="w-4 h-4" />
@@ -268,26 +243,25 @@ export function StateComplianceGuideModal({ isOpen, onClose, userProfile }: Prop
           </button>
         </div>
 
-        {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar text-xs text-slate-300">
-          
+        {/* Scrollable Content */}
+        <div className="space-y-5 text-xs text-text overflow-y-auto max-h-[60vh] pr-1">
           {/* TAB 1: DPIIT Recognition */}
           {activeTab === "dpiit" && (
-            <div className="space-y-5 animate-fadeIn">
-              <div className="p-4 rounded-xl border border-blue-500/25 bg-blue-950/20 space-y-2">
-                <div className="text-sm font-bold text-white flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-blue-400" />
+            <div className="space-y-4">
+              <Card className="p-4 bg-surface-2 border-border space-y-2">
+                <div className="text-sm font-bold text-text flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-accent" />
                   What is DPIIT Recognition?
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <p className="text-xs text-muted leading-relaxed">
                   Issued by the Department for Promotion of Industry and Internal Trade (Ministry of Commerce and Industry). 
                   It is the sovereign legal verification that qualifies your company as an official Indian Startup under Gazette Notification G.S.R. 127(E).
                 </p>
-              </div>
+              </Card>
 
               {/* Eligibility Criteria */}
               <div className="space-y-2">
-                <div className="font-bold text-slate-200 uppercase tracking-wider text-[11px]">
+                <div className="font-semibold text-text uppercase tracking-wider text-xs">
                   Official Eligibility Criteria
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -297,20 +271,20 @@ export function StateComplianceGuideModal({ isOpen, onClose, userProfile }: Prop
                     { label: "Turnover Limit", desc: "Annual turnover has not exceeded ₹100 Crore in any financial year" },
                     { label: "Innovation Focus", desc: "Original innovative product, process, or scalable employment generation" }
                   ].map((crit, idx) => (
-                    <div key={idx} className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                      <div className="font-bold text-white flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <Card key={idx} className="p-3 bg-surface-2 border-border">
+                      <div className="font-semibold text-text flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-ok" />
                         {crit.label}
                       </div>
-                      <div className="text-slate-400 mt-1">{crit.desc}</div>
-                    </div>
+                      <div className="text-muted mt-1">{crit.desc}</div>
+                    </Card>
                   ))}
                 </div>
               </div>
 
               {/* Key Benefits */}
               <div className="space-y-2">
-                <div className="font-bold text-slate-200 uppercase tracking-wider text-[11px]">
+                <div className="font-semibold text-text uppercase tracking-wider text-xs">
                   Statutory Incentives Unlocked
                 </div>
                 <div className="space-y-2">
@@ -336,100 +310,100 @@ export function StateComplianceGuideModal({ isOpen, onClose, userProfile }: Prop
                       desc: "DPIIT startups are exempt from 'prior turnover' and 'prior experience' hurdles for public procurement tenders on GeM."
                     }
                   ].map((ben, idx) => (
-                    <div key={idx} className="p-3 rounded-lg bg-slate-950/70 border border-slate-800 flex items-start gap-2.5">
-                      <Sparkles className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    <Card key={idx} className="p-3.5 bg-surface-2 border-border flex items-start gap-2.5">
+                      <Sparkles className="w-4 h-4 text-unlock shrink-0 mt-0.5" />
                       <div>
-                        <div className="font-bold text-white">{ben.title}</div>
-                        <div className="text-slate-400 mt-0.5 leading-relaxed">{ben.desc}</div>
+                        <div className="font-semibold text-text">{ben.title}</div>
+                        <div className="text-muted mt-0.5 leading-relaxed">{ben.desc}</div>
                       </div>
-                    </div>
+                    </Card>
                   ))}
                 </div>
               </div>
 
               {/* Step-by-Step Registration Guide */}
-              <div className="p-4 rounded-xl border border-slate-800 bg-slate-950 space-y-3">
-                <div className="font-bold text-white flex items-center justify-between">
+              <Card className="p-4 bg-surface-2 border-border space-y-3">
+                <div className="font-bold text-text flex items-center justify-between">
                   <span>How to Apply Online (48 Hours, 100% Free)</span>
                   <a 
                     href="https://www.startupindia.gov.in/content/sih/en/recognition-page.html"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-400 hover:underline flex items-center gap-1 font-semibold"
+                    className="text-accent hover:underline flex items-center gap-1 font-semibold"
                   >
                     Startup India Portal <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
-                <ol className="list-decimal list-inside space-y-1.5 text-slate-300 leading-relaxed">
+                <ol className="list-decimal list-inside space-y-1.5 text-muted leading-relaxed">
                   <li>Incorporate your company as a Private Limited Company or LLP via the MCA SPICe+ portal.</li>
-                  <li>Log on to <strong>startupindia.gov.in</strong> and create a founder profile.</li>
-                  <li>Click <strong>'Apply for DPIIT Recognition'</strong> and upload your Certificate of Incorporation (CIN) and PAN.</li>
+                  <li>Log on to <strong className="text-text">startupindia.gov.in</strong> and create a founder profile.</li>
+                  <li>Click <strong className="text-text">&apos;Apply for DPIIT Recognition&apos;</strong> and upload your Certificate of Incorporation (CIN) and PAN.</li>
                   <li>Provide a brief 300-word write-up explaining your product innovation, market problem, and potential for job creation.</li>
                   <li>Submit the form. Your digital recognition certificate with a unique DIPP number is issued within 48 to 72 hours.</li>
                 </ol>
-              </div>
+              </Card>
             </div>
           )}
 
           {/* TAB 2: State-Specific Startup Guide */}
           {activeTab === "state" && (
-            <div className="space-y-5 animate-fadeIn">
-              <div className="p-4 rounded-xl border border-blue-500/25 bg-blue-950/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="space-y-4">
+              <Card className="p-4 bg-surface-2 border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm font-bold text-white flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-blue-400" />
+                  <div className="text-sm font-bold text-text flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-accent" />
                     {stateData.portalName}
                   </div>
-                  <div className="text-slate-400 mt-0.5">Nodal Agency: {stateData.nodalAgency}</div>
+                  <div className="text-muted mt-0.5">Nodal Agency: {stateData.nodalAgency}</div>
                 </div>
                 <a
                   href={stateData.portalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold flex items-center gap-1 shrink-0"
+                  className="min-h-[44px] inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-accent text-accent-contrast text-xs font-semibold hover:opacity-90 transition-opacity shrink-0"
                 >
-                  Visit Portal <ExternalLink className="w-3.5 h-3.5" />
+                  Visit Portal <ExternalLink className="w-3.5 h-3.5 ml-1" />
                 </a>
-              </div>
+              </Card>
 
               {/* State Benefits */}
               <div className="space-y-2">
-                <div className="font-bold text-slate-200 uppercase tracking-wider text-[11px]">
+                <div className="font-semibold text-text uppercase tracking-wider text-xs">
                   State-Specific Incentives for {userProfile.state} Startups
                 </div>
                 <div className="space-y-2">
                   {stateData.keyBenefits.map((ben, idx) => (
-                    <div key={idx} className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex items-center gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span className="text-white font-medium">{ben}</span>
-                    </div>
+                    <Card key={idx} className="p-3 bg-surface-2 border-border flex items-center gap-2.5">
+                      <CheckCircle2 className="w-4 h-4 text-ok shrink-0" />
+                      <span className="text-text font-medium">{ben}</span>
+                    </Card>
                   ))}
                 </div>
               </div>
 
               {/* State Onboarding Checklist */}
               <div className="space-y-2">
-                <div className="font-bold text-slate-200 uppercase tracking-wider text-[11px]">
+                <div className="font-semibold text-text uppercase tracking-wider text-xs">
                   State Nodal Registration Roadmap
                 </div>
-                <div className="p-4 rounded-xl border border-slate-800 bg-slate-950 space-y-2">
+                <Card className="p-4 bg-surface-2 border-border space-y-2">
                   {stateData.mandatorySteps.map((step, idx) => (
                     <div key={idx} className="flex items-start gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                      <span className="w-5 h-5 rounded-full bg-accent/15 text-accent border border-accent/30 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
                         {idx + 1}
                       </span>
-                      <span className="text-slate-300 leading-snug">{step}</span>
+                      <span className="text-muted leading-snug">{step}</span>
                     </div>
                   ))}
-                </div>
+                </Card>
               </div>
             </div>
           )}
 
           {/* TAB 3: Statutory Licenses */}
           {activeTab === "statutory" && (
-            <div className="space-y-4 animate-fadeIn">
-              <div className="text-slate-400">
+            <div className="space-y-4">
+              <div className="text-muted">
                 Core statutory registrations mandated by Indian commercial law prior to receiving institutional grants or commercial capital:
               </div>
 
@@ -466,33 +440,27 @@ export function StateComplianceGuideModal({ isOpen, onClose, userProfile }: Prop
                     desc: "Mandatory regulatory licenses for Agri-food processing or clinical healthtech/medical device ventures."
                   }
                 ].map((lic, idx) => (
-                  <div key={idx} className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                    <div className="font-bold text-white text-xs">{lic.name}</div>
-                    <div className="text-blue-400 text-[10px] font-semibold">{lic.portal}</div>
-                    <p className="text-slate-400 text-[11px] leading-relaxed pt-1">{lic.desc}</p>
-                  </div>
+                  <Card key={idx} className="p-3.5 bg-surface-2 border-border space-y-1">
+                    <div className="font-semibold text-text text-xs">{lic.name}</div>
+                    <div className="text-accent text-xs font-medium">{lic.portal}</div>
+                    <p className="text-muted text-xs leading-relaxed pt-1">{lic.desc}</p>
+                  </Card>
                 ))}
               </div>
             </div>
           )}
-
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-950/90">
-          <div className="text-xs text-slate-400">
-            Current Profile State: <strong className="text-white">{userProfile.state}</strong>
+        <div className="flex items-center justify-between pt-3 border-t border-border">
+          <div className="text-xs text-muted">
+            Current Profile State: <strong className="text-text">{userProfile.state}</strong>
           </div>
-          <button
-            onClick={onClose}
-            className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500"
-          >
+          <Button variant="primary" onClick={onClose}>
             Done
-          </button>
+          </Button>
         </div>
-
       </div>
-    </div>
+    </Modal>
   );
 }
-

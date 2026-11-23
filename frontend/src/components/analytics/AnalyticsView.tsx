@@ -2,18 +2,6 @@
 
 import React from "react";
 import { 
-  Building2, 
-  Coins, 
-  Sparkles, 
-  CheckCircle2, 
-  MapPin, 
-  Layers, 
-  Grid, 
-  Compass,
-  AlertCircle,
-  RotateCcw
-} from "lucide-react";
-import { 
   BarChart, 
   Bar, 
   XAxis, 
@@ -21,116 +9,100 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from "recharts";
+import { 
+  Building2, 
+  Coins, 
+  Layers, 
+  MapPin, 
+  Sparkles, 
+  CheckCircle2, 
+  Compass, 
+  Grid
+} from "lucide-react";
 import { AnalyticsBundle } from "@/types";
 import { ResourceStatus } from "@/hooks/useAppData";
+import { useTheme } from "@/context/ThemeProvider";
+import { Card } from "@/components/ui/Card";
+import { Chip } from "@/components/ui/Chip";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 interface Props {
   data: AnalyticsBundle | null;
-  status: ResourceStatus;
+  status?: ResourceStatus;
+  loading?: boolean;
   error?: string | null;
-  isLocalFallback?: boolean;
   onRetry?: () => void;
+  isLocalFallback?: boolean;
 }
 
-export function AnalyticsView({ 
-  data, 
-  status, 
-  error, 
-  isLocalFallback, 
-  onRetry 
+export function AnalyticsView({
+  data,
+  status,
+  loading,
+  error,
+  onRetry,
+  isLocalFallback = false,
 }: Props) {
-  // 1. Loading Skeleton State (Never a bare spinner)
-  if (status === "loading" && !data) {
+  const { chartColors } = useTheme();
+  const isLoading = loading ?? (status === "loading");
+
+  // 1. Loading Skeleton State
+  if (isLoading) {
     return (
-      <div className="space-y-8 animate-pulse">
-        <div className="pb-4 border-b border-slate-200 dark:border-slate-800 space-y-2">
-          <div className="h-4 w-36 bg-slate-200 dark:bg-slate-800 rounded" />
-          <div className="h-8 w-96 bg-slate-200 dark:bg-slate-800 rounded" />
-          <div className="h-4 w-120 bg-slate-200 dark:bg-slate-800 rounded" />
+      <div className="space-y-8 animate-fadeIn">
+        <div className="space-y-2 pb-4 border-b border-border">
+          <Skeleton className="h-5 w-40" />
+          <Skeleton className="h-8 w-96" />
+          <Skeleton className="h-4 w-full max-w-xl" />
         </div>
 
-        {/* AI Brief Skeleton */}
-        <div className="p-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-y-3">
-          <div className="h-4 w-48 bg-slate-200 dark:bg-slate-800 rounded" />
-          <div className="space-y-2">
-            <div className="h-3 w-full bg-slate-200 dark:bg-slate-800 rounded" />
-            <div className="h-3 w-5/6 bg-slate-200 dark:bg-slate-800 rounded" />
+        <Skeleton className="h-28 w-full rounded-xl" />
+
+        <div className="space-y-3">
+          <Skeleton className="h-6 w-72" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-32 rounded-xl" />
+            ))}
           </div>
         </div>
 
-        {/* KPI Cards Skeleton */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="p-5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
-              <div className="h-3 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
-              <div className="h-7 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
-              <div className="h-2.5 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
-            </div>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-xl" />
           ))}
         </div>
 
-        {/* Charts Skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="p-5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 h-72" />
-          <div className="p-5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 h-72" />
+          <Skeleton className="h-72 rounded-xl" />
+          <Skeleton className="h-72 rounded-xl" />
         </div>
       </div>
     );
   }
 
   // 2. Error State with Retry Button
-  if (status === "error" && !data) {
+  if (error && !data) {
     return (
-      <div className="p-12 text-center rounded-2xl border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 max-w-xl mx-auto my-8 space-y-4">
-        <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
-          <AlertCircle className="w-6 h-6" />
-        </div>
-        <div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">
-            Unable to Load Policy Analytics
-          </h3>
-          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-            {error || "An error occurred while connecting to the analytics engine."}
-          </p>
-        </div>
-        {onRetry && (
-          <button
-            onClick={onRetry}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition-colors"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Retry Analytics</span>
-          </button>
-        )}
-      </div>
+      <ErrorState
+        title="Unable to Load Policy Analytics"
+        message={error || "An error occurred while connecting to the analytics engine."}
+        onRetry={onRetry}
+        retryText="Retry Analytics"
+      />
     );
   }
 
   // 3. Empty State
   if (!data || !data.summary || data.summary.total_schemes === 0) {
     return (
-      <div className="p-12 text-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 max-w-xl mx-auto my-8 space-y-4">
-        <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
-          <Layers className="w-6 h-6" />
-        </div>
-        <div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">
-            No Scheme Analytics Available
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            No public policy records found matching current criteria.
-          </p>
-        </div>
-        {onRetry && (
-          <button
-            onClick={onRetry}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold shadow-sm transition-colors"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Refresh Analytics</span>
-          </button>
-        )}
-      </div>
+      <EmptyState
+        title="No Scheme Analytics Available"
+        message="No public policy records found matching current criteria."
+        action={onRetry ? { label: "Refresh Analytics", onClick: onRetry } : undefined}
+      />
     );
   }
 
@@ -144,73 +116,81 @@ export function AnalyticsView({
     ai_brief 
   } = data;
 
+  const tooltipStyle = {
+    backgroundColor: chartColors.surface,
+    borderColor: chartColors.border,
+    borderRadius: "8px",
+    fontSize: "12px",
+    color: chartColors.text
+  };
+
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <div className="space-y-8 animate-fadeIn text-text">
       {/* ── Page Header ─────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-border">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
+            <Chip variant="info" size="sm">
               National Policy Landscape
-            </span>
+            </Chip>
             {isLocalFallback ? (
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+              <Chip variant="warn" size="sm">
                 Computed locally
-              </span>
+              </Chip>
             ) : (
-              <span className="text-xs text-slate-500 dark:text-slate-400">
+              <span className="text-xs text-muted">
                 • Real-Time Aggregation
               </span>
             )}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-950 dark:text-white tracking-tight font-headline">
+          <h1 className="text-2xl sm:text-3xl font-bold text-text tracking-tight font-headline">
             Policy Intelligence & Capital Allocation Analytics
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl">
+          <p className="mt-1 text-xs sm:text-sm text-muted max-w-2xl">
             Macro-level intelligence on government startup capital flows, funding instruments, stage allocations, and regional policy coverage.
           </p>
         </div>
       </div>
 
       {/* ── AI Executive Policy Brief ─────────────────────────────────── */}
-      <div className="p-6 rounded-2xl border border-blue-200 dark:border-blue-500/25 bg-gradient-to-r from-blue-50 via-white to-indigo-50 dark:from-blue-950/25 dark:via-slate-900 dark:to-indigo-950/25 space-y-3 shadow-sm">
+      <Card className="p-5 sm:p-6 bg-surface-2 border-border space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+          <div className="flex items-center gap-2 text-accent">
             <Sparkles className="w-5 h-5" />
             <span className="text-xs font-bold uppercase tracking-wider">
               Executive Policy Intelligence Brief
             </span>
           </div>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" /> Fact-Checked Against Database
-          </span>
+          <Chip variant="met" size="sm">
+            <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Fact-Checked Against Database
+          </Chip>
         </div>
-        <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-sans">
+        <p className="text-xs sm:text-sm text-text leading-relaxed font-sans">
           {ai_brief}
         </p>
-      </div>
+      </Card>
 
       {/* ── Total Money by Funding Instrument ─────────────────────────── */}
       <div className="space-y-3">
         <div>
-          <h2 className="text-base font-bold text-slate-950 dark:text-white flex items-center gap-2">
-            <Coins className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <h2 className="text-base font-bold text-text flex items-center gap-2">
+            <Coins className="w-4 h-4 text-ok" />
             Total Capital Allocation by Funding Instrument
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-muted">
             Breakdown of public capital available across non-dilutive grants, debt guarantees, venture equity and statutory subsidies.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {(instrument_breakdown || []).map((item, idx) => (
-            <div 
+            <Card 
               key={idx}
-              className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-2"
+              className="p-4 sm:p-5 bg-surface border-border flex flex-col justify-between space-y-2"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">
+                  <span className="text-xs font-bold text-text">
                     {item.instrument}
                   </span>
                   <span 
@@ -218,86 +198,86 @@ export function AnalyticsView({
                     style={{ backgroundColor: item.color }} 
                   />
                 </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-slate-950 dark:text-white mt-1 font-headline">
+                <div className="text-2xl sm:text-3xl font-bold text-text mt-1 font-headline">
                   {item.total_display}
                 </div>
-                <div className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 mt-0.5">
+                <div className="text-xs font-semibold text-accent mt-0.5">
                   {item.scheme_count} Active Frameworks
                 </div>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <p className="text-xs text-muted pt-2 border-t border-border">
                 {item.desc}
               </p>
-            </div>
+            </Card>
           ))}
         </div>
       </div>
 
       {/* ── Macro KPI Grid ──────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
-          <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center justify-between">
+        <Card className="p-4 sm:p-5 bg-surface border-border space-y-1">
+          <div className="text-xs font-semibold text-muted flex items-center justify-between">
             <span>Verified Schemes</span>
-            <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <Layers className="w-4 h-4 text-accent" />
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-slate-950 dark:text-white font-headline">
+          <div className="text-2xl sm:text-3xl font-bold text-text font-headline">
             {summary.total_schemes}
           </div>
-          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="text-xs text-muted">
             {summary.pan_india_schemes} Pan-India • {summary.state_schemes} State Missions
           </div>
-        </div>
+        </Card>
 
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
-          <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center justify-between">
+        <Card className="p-4 sm:p-5 bg-surface border-border space-y-1">
+          <div className="text-xs font-semibold text-muted flex items-center justify-between">
             <span>Avg Max Funding Cap</span>
-            <Coins className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <Coins className="w-4 h-4 text-ok" />
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 font-headline">
+          <div className="text-2xl sm:text-3xl font-bold text-ok font-headline">
             {summary.avg_max_funding_display}
           </div>
-          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="text-xs text-muted">
             Average ceiling per targeted grant
           </div>
-        </div>
+        </Card>
 
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
-          <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center justify-between">
+        <Card className="p-4 sm:p-5 bg-surface border-border space-y-1">
+          <div className="text-xs font-semibold text-muted flex items-center justify-between">
             <span>Ministries & Agencies</span>
-            <Building2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            <Building2 className="w-4 h-4 text-unlock" />
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-slate-950 dark:text-white font-headline">
+          <div className="text-2xl sm:text-3xl font-bold text-text font-headline">
             {summary.unique_ministries}
           </div>
-          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="text-xs text-muted">
             Central depts & state innovation cells
           </div>
-        </div>
+        </Card>
 
-        <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-1">
-          <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center justify-between">
+        <Card className="p-4 sm:p-5 bg-surface border-border space-y-1">
+          <div className="text-xs font-semibold text-muted flex items-center justify-between">
             <span>States & UTs Covered</span>
-            <MapPin className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <MapPin className="w-4 h-4 text-warn" />
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-slate-950 dark:text-white font-headline">
+          <div className="text-2xl sm:text-3xl font-bold text-text font-headline">
             28+
           </div>
-          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="text-xs text-muted">
             Active state innovation policies
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* ── Two-Column Charts: Top Ministries & Sector Distribution ──── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Ministries by Scheme Count */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <Card className="p-5 bg-surface border-border space-y-4">
           <div>
-            <h3 className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <h3 className="text-sm font-bold text-text flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-accent" />
               Leading Government Nodal Authorities
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Ministries and departments with highest scheme density.</p>
+            <p className="text-xs text-muted">Ministries and departments with highest scheme density.</p>
           </div>
 
           <div className="h-64 w-full">
@@ -307,26 +287,26 @@ export function AnalyticsView({
                 layout="vertical"
                 margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
               >
-                <XAxis type="number" stroke="#94a3b8" fontSize={11} />
-                <YAxis dataKey="ministry" type="category" width={110} stroke="#64748b" fontSize={10} />
+                <XAxis type="number" stroke={chartColors.muted} fontSize={11} />
+                <YAxis dataKey="ministry" type="category" width={110} stroke={chartColors.muted} fontSize={10} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "10px", fontSize: "12px", color: "#fff" }}
+                  contentStyle={tooltipStyle}
                   formatter={(val: unknown) => [`${val} Schemes`, "Total Schemes"]}
                 />
-                <Bar dataKey="scheme_count" fill="#3b82f6" radius={[0, 6, 6, 0]} />
+                <Bar dataKey="scheme_count" fill={chartColors.accent} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </Card>
 
         {/* Sector Distribution */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <Card className="p-5 bg-surface border-border space-y-4">
           <div>
-            <h3 className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
-              <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <h3 className="text-sm font-bold text-text flex items-center gap-2">
+              <Layers className="w-4 h-4 text-ok" />
               Scheme Volume by Technology Sector
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Distribution of programs targeting specific verticals.</p>
+            <p className="text-xs text-muted">Distribution of programs targeting specific verticals.</p>
           </div>
 
           <div className="h-64 w-full">
@@ -337,39 +317,39 @@ export function AnalyticsView({
               >
                 <XAxis 
                   dataKey="sector" 
-                  stroke="#94a3b8" 
+                  stroke={chartColors.muted} 
                   fontSize={10} 
                   angle={-20} 
                   textAnchor="end" 
                   interval={0} 
                 />
-                <YAxis stroke="#94a3b8" fontSize={11} />
+                <YAxis stroke={chartColors.muted} fontSize={11} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "10px", fontSize: "12px", color: "#fff" }}
+                  contentStyle={tooltipStyle}
                   formatter={(val: unknown) => [`${val} Schemes`, "Total Schemes"]}
                 />
-                <Bar dataKey="scheme_count" fill="#10b981" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="scheme_count" fill={chartColors.ok} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* ── Sector x Stage Opportunity Gap Matrix ─────────────────────── */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+      <Card className="p-5 bg-surface border-border space-y-4">
         <div>
-          <h3 className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
-            <Grid className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+          <h3 className="text-sm font-bold text-text flex items-center gap-2">
+            <Grid className="w-4 h-4 text-unlock" />
             Funding Density & Opportunity Gap Matrix (Sector vs. Stage)
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-muted">
             Heatmap highlighting policy saturation versus capital white-spaces across maturity stages.
           </p>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
-            <thead className="bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <table className="w-full text-left text-xs text-text">
+            <thead className="bg-surface-2 border-b border-border text-xs font-bold uppercase tracking-wider text-muted">
               <tr>
                 <th className="py-2.5 px-3">Industry Vertical</th>
                 <th className="py-2.5 px-3 text-center">Idea / Concept</th>
@@ -378,37 +358,37 @@ export function AnalyticsView({
                 <th className="py-2.5 px-3 text-center">Growth / Scale-up</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-sans">
+            <tbody className="divide-y divide-border font-sans">
               {(gap_heatmap || []).map((row, rIdx) => {
                 const getHeatBg = (val: number) => {
-                  if (val >= 25) return "bg-blue-600/20 text-blue-700 dark:text-blue-300 font-bold border border-blue-500/30";
-                  if (val >= 12) return "bg-blue-500/10 text-blue-600 dark:text-blue-300 font-semibold";
-                  if (val >= 5) return "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300";
-                  return "bg-slate-50 dark:bg-slate-950/40 text-slate-400";
+                  if (val >= 25) return "bg-accent/20 text-accent font-bold border border-accent/30";
+                  if (val >= 12) return "bg-accent/10 text-accent font-semibold";
+                  if (val >= 5) return "bg-surface-2 text-text";
+                  return "bg-surface text-muted";
                 };
 
                 return (
-                  <tr key={rIdx} className="hover:bg-slate-50 dark:hover:bg-slate-950/60">
-                    <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">
+                  <tr key={rIdx} className="hover:bg-surface-2/60">
+                    <td className="py-2.5 px-3 font-semibold text-text">
                       {row.sector}
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className={`px-2 py-1 rounded-md text-xs ${getHeatBg(Number(row["Idea"]) || 0)}`}>
+                      <span className={`px-2 py-1 rounded text-xs ${getHeatBg(Number(row["Idea"]) || 0)}`}>
                         {Number(row["Idea"]) || 0} schemes
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className={`px-2 py-1 rounded-md text-xs ${getHeatBg(Number(row["Prototype/MVP"]) || 0)}`}>
+                      <span className={`px-2 py-1 rounded text-xs ${getHeatBg(Number(row["Prototype/MVP"]) || 0)}`}>
                         {Number(row["Prototype/MVP"]) || 0} schemes
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className={`px-2 py-1 rounded-md text-xs ${getHeatBg(Number(row["Early Revenue"]) || 0)}`}>
+                      <span className={`px-2 py-1 rounded text-xs ${getHeatBg(Number(row["Early Revenue"]) || 0)}`}>
                         {Number(row["Early Revenue"]) || 0} schemes
                       </span>
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <span className={`px-2 py-1 rounded-md text-xs ${getHeatBg(Number(row["Growth/Scale-up"]) || 0)}`}>
+                      <span className={`px-2 py-1 rounded text-xs ${getHeatBg(Number(row["Growth/Scale-up"]) || 0)}`}>
                         {Number(row["Growth/Scale-up"]) || 0} schemes
                       </span>
                     </td>
@@ -418,49 +398,49 @@ export function AnalyticsView({
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
 
       {/* ── Regional Innovation Corridors ─────────────────────────────── */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+      <Card className="p-5 bg-surface border-border space-y-4">
         <div>
-          <h3 className="text-sm font-bold text-slate-950 dark:text-white flex items-center gap-2">
-            <Compass className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <h3 className="text-sm font-bold text-text flex items-center gap-2">
+            <Compass className="w-4 h-4 text-warn" />
             Regional Innovation Corridors & Nationwide Policy Access
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-muted">
             Authoritative geographic distribution grouping central frameworks and regional startup missions.
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {(regional_corridors || []).map((corr, idx) => (
-            <div 
+            <Card 
               key={idx}
-              className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-2"
+              className="p-4 bg-surface-2 border-border flex flex-col justify-between space-y-2"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">
+                  <span className="text-xs font-bold text-text">
                     {corr.region}
                   </span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                  <Chip variant="warn" size="sm">
                     {corr.badge}
-                  </span>
+                  </Chip>
                 </div>
-                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                <p className="text-xs text-muted mt-1">
                   {corr.coverage}
                 </p>
               </div>
-              <div className="pt-2 border-t border-slate-200 dark:border-slate-850 flex items-center justify-between text-[11px]">
-                <span className="text-slate-500 dark:text-slate-400">Cluster Capacity:</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+              <div className="pt-2 border-t border-border flex items-center justify-between text-xs">
+                <span className="text-muted">Cluster Capacity:</span>
+                <span className="font-bold text-ok font-mono">
                   {corr.count}+ Frameworks
                 </span>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

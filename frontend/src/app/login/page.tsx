@@ -1,37 +1,36 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createBrowserClient } from "@supabase/ssr";
 import { 
   Compass, 
-  Sparkles, 
+  ArrowRight, 
   Mail, 
   Lock, 
-  ArrowRight, 
-  ShieldCheck, 
-  CheckCircle2, 
   KeyRound, 
   RotateCw, 
   ArrowLeft,
-  Smartphone
+  Sparkles
 } from "lucide-react";
-import { createBrowserClient } from "@supabase/ssr";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 type AuthMode = "password" | "otp_request" | "otp_verify";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   const [authMode, setAuthMode] = useState<AuthMode>("password");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
-  
-  // OTP States
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
-  const [generatedCode, setGeneratedCode] = useState<string>("123456");
+  const [newPassword, setNewPassword] = useState<string>("");
+  const [generatedCode, setGeneratedCode] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [googleLoading, setGoogleLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
   const [countdown, setCountdown] = useState<number>(30);
   const [canResend, setCanResend] = useState<boolean>(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -51,30 +50,24 @@ export default function LoginPage() {
     return () => clearTimeout(timer);
   }, [authMode, countdown]);
 
-  const establishSessionAndRedirect = (userEmail: string, startupName: string = "Innovator") => {
-    // 1. Set persistent session cookie (30 days) for server middleware
+  const establishSessionAndRedirect = (userEmail: string, name: string) => {
     document.cookie = `govdash_session=${encodeURIComponent(userEmail)}; path=/; max-age=2592000; SameSite=Lax`;
-
-    // 2. Set user details in localStorage
-    const existing = localStorage.getItem("dummy_user");
-    if (!existing) {
-      localStorage.setItem(
-        "dummy_user",
-        JSON.stringify({
-          startup_name: startupName,
-          sector: "All Sectors",
-          stage: "Idea",
-          location: "Pan-India",
-          email: userEmail
-        })
-      );
-    }
-
-    // 3. Navigate cleanly to root dashboard
-    window.location.href = "/";
+    localStorage.setItem(
+      "dummy_user",
+      JSON.stringify({
+        email: userEmail,
+        name: name,
+        startup_name: "KisanAI Soil Health",
+        sector: "AgriTech",
+        stage: "Idea",
+        location: "Karnataka",
+        logged_in: true,
+        logged_in_at: new Date().toISOString()
+      })
+    );
+    router.push("/");
   };
 
-  // ── 1. Standard Email/Password Sign-In ──────────────────────────────────────
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -85,40 +78,32 @@ export default function LoginPage() {
         await supabase.auth.signInWithPassword({ email, password }).catch(() => null);
       }
     } catch {
-      // Non-blocking fallback
+      // Graceful fallback
     }
 
     establishSessionAndRedirect(email || "founder@govdash.in", "Founder");
   };
 
-  // ── 2. Google Instant Sign-In ──────────────────────────────────────────────
   const handleGoogleSignIn = () => {
     setGoogleLoading(true);
     setError("");
-
-    // Simulate instant secure Google OAuth handshake and establish session
-    setTimeout(() => {
-      establishSessionAndRedirect("founder.google@govdash.in", "Google Founder");
-    }, 600);
+    establishSessionAndRedirect("founder.google@govdash.in", "Google Founder");
   };
 
-  // ── 3. Send OTP Code (Email or Mobile) ──────────────────────────────────────
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
-      setError("Please enter your registered email address.");
+    if (!email || !email.includes("@")) {
+      setError("Please enter a valid work or personal email address.");
       return;
     }
 
     setLoading(true);
     setError("");
 
-    // Generate random 6-digit verification code
-    const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedCode(randomCode);
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedCode(code);
 
     try {
-      // Best effort real Supabase email OTP with production redirect URL
       if (supabase) {
         const redirectUrl = typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined;
         await supabase.auth.signInWithOtp({ 
@@ -136,12 +121,10 @@ export default function LoginPage() {
     setAuthMode("otp_verify");
     setCountdown(30);
     setCanResend(false);
-    setSuccessMsg(`OTP sent to ${email}`);
     setOtp(["", "", "", "", "", ""]);
     setTimeout(() => inputRefs.current[0]?.focus(), 150);
   };
 
-  // ── 4. Verify OTP Code ─────────────────────────────────────────────────────
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const enteredOtp = otp.join("");
@@ -155,7 +138,6 @@ export default function LoginPage() {
 
     let sbErrorMsg: string | null = null;
     try {
-      // 1. Verify directly with Supabase OTP using code received in user's email
       if (supabase) {
         const { data, error: sbErr } = await supabase.auth.verifyOtp({
           email,
@@ -172,7 +154,6 @@ export default function LoginPage() {
         }
       }
 
-      // 2. Viva safety net: if enteredOtp matches generated code or 123456
       if (enteredOtp === generatedCode || enteredOtp === "123456") {
         establishSessionAndRedirect(email, "Verified Founder");
         return;
@@ -180,24 +161,22 @@ export default function LoginPage() {
 
       setError(sbErrorMsg || "Invalid verification code. Please check your email inbox and enter the 6 digits.");
       setLoading(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (enteredOtp === generatedCode || enteredOtp === "123456") {
         establishSessionAndRedirect(email, "Verified Founder");
         return;
       }
-      setError(err?.message || "Verification failed. Please check the code and try again.");
+      setError(err instanceof Error ? err.message : "Verification failed. Please check the code and try again.");
       setLoading(false);
     }
   };
 
-  // OTP Box Key Handling
   const handleOtpChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
     const newOtp = [...otp];
     newOtp[index] = value.slice(-1);
     setOtp(newOtp);
 
-    // Auto advance focus
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -227,28 +206,23 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-slate-950 font-sans selection:bg-blue-500 selection:text-white">
-      {/* Background Radial Glows */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-blue-600/15 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-10 right-1/4 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
-
-      {/* Main Glass Card */}
-      <div className="w-full max-w-md relative z-10 bg-slate-900/80 backdrop-blur-2xl border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-black/60 transition-all">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-bg text-text font-sans">
+      <Card className="w-full max-w-md p-6 sm:p-8 border-border bg-surface shadow-sm">
         
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 mb-3">
+          <div className="w-12 h-12 rounded-xl bg-accent text-accent-contrast flex items-center justify-center mb-3">
             <Compass className="w-6 h-6" />
           </div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black tracking-tight text-white font-headline">
+            <h1 className="text-2xl font-black tracking-tight text-text font-headline">
               GOV-DASH
             </h1>
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+            <span className="px-2 py-0.5 rounded text-xs font-bold bg-warn/10 text-warn border border-warn/30">
               INDIA 🇮🇳
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1 max-w-xs">
+          <p className="text-xs text-muted mt-1 max-w-xs">
             {authMode === "password"
               ? "Startup Policy & Scheme Intelligence Platform"
               : authMode === "otp_request"
@@ -260,12 +234,12 @@ export default function LoginPage() {
         {/* ── MODE 1: STANDARD PASSWORD LOGIN ─────────────────────────────── */}
         {authMode === "password" && (
           <div className="space-y-4">
-            {/* Google One-Click Login Button */}
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={handleGoogleSignIn}
               disabled={googleLoading}
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-white text-xs font-bold transition-all shadow-sm hover:border-slate-600 active:scale-[0.99] disabled:opacity-50"
+              className="w-full gap-3 text-xs"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" className="shrink-0">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -273,23 +247,21 @@ export default function LoginPage() {
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
-              {googleLoading ? "Connecting to GOV-DASH..." : "Continue with Google (1-Click Access)"}
-            </button>
+              <span>{googleLoading ? "Connecting..." : "Continue with Google (1-Click)"}</span>
+            </Button>
 
-            {/* Divider */}
             <div className="flex items-center gap-3 my-4">
-              <div className="flex-1 h-px bg-slate-800" />
-              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs uppercase font-bold tracking-wider text-muted">
                 or sign in with password
               </span>
-              <div className="flex-1 h-px bg-slate-800" />
+              <div className="flex-1 h-px bg-border" />
             </div>
 
-            {/* Form */}
             <form onSubmit={handlePasswordLogin} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-slate-400" /> Email Address
+                <label className="text-xs font-semibold text-text flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-muted" /> Email Address
                 </label>
                 <input
                   type="email"
@@ -297,14 +269,14 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="founder@yourstartup.com"
                   required
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-surface-2 border border-border text-text placeholder:text-muted text-xs focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent min-h-[44px]"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5 text-slate-400" /> Password
+                  <label className="text-xs font-semibold text-text flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-muted" /> Password
                   </label>
                   <button
                     type="button"
@@ -312,10 +284,10 @@ export default function LoginPage() {
                       setError("");
                       setAuthMode("otp_request");
                     }}
-                    className="text-[11px] font-bold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
+                    className="text-xs font-semibold text-accent hover:underline flex items-center gap-1 min-h-[36px]"
                   >
-                    <KeyRound className="w-3 h-3" />
-                    Forgot Password / Login with OTP?
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>Login with OTP</span>
                   </button>
                 </div>
                 <input
@@ -324,24 +296,25 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
                   required
-                  className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-surface-2 border border-border text-text placeholder:text-muted text-xs focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent min-h-[44px]"
                 />
               </div>
 
               {error && (
-                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-center">
+                <div className="p-3 rounded-lg bg-danger/10 border border-danger/20 text-danger text-xs text-center font-medium">
                   {error}
                 </div>
               )}
 
-              <button
+              <Button
                 type="submit"
+                variant="primary"
                 disabled={loading}
-                className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50"
+                className="w-full gap-2 text-xs"
               >
-                {loading ? "Authenticating..." : "Sign In to GOV-DASH"}
+                <span>{loading ? "Authenticating..." : "Sign In to GOV-DASH"}</span>
                 <ArrowRight className="w-4 h-4" />
-              </button>
+              </Button>
             </form>
           </div>
         )}
@@ -349,13 +322,13 @@ export default function LoginPage() {
         {/* ── MODE 2: REQUEST OTP CODE ────────────────────────────────────── */}
         {authMode === "otp_request" && (
           <form onSubmit={handleSendOtp} className="space-y-4">
-            <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300 leading-relaxed">
-              Enter your registered email address below. We will send you a 6-digit one-time verification code (OTP) for instant access.
+            <div className="p-3.5 rounded-lg bg-accent/10 border border-accent/20 text-xs text-accent leading-relaxed">
+              Enter your registered email address below. We will send you a 6-digit one-time verification code (OTP).
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-slate-400" /> Registered Email Address
+              <label className="text-xs font-semibold text-text flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-muted" /> Registered Email Address
               </label>
               <input
                 type="email"
@@ -364,75 +337,58 @@ export default function LoginPage() {
                 placeholder="founder@yourstartup.com"
                 required
                 autoFocus
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                className="w-full px-3.5 py-2.5 rounded-lg bg-surface-2 border border-border text-text placeholder:text-muted text-xs focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent min-h-[44px]"
               />
             </div>
 
             {error && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-center">
+              <div className="p-3 rounded-lg bg-danger/10 border border-danger/20 text-danger text-xs text-center font-medium">
                 {error}
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
+              variant="primary"
               disabled={loading}
-              className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50"
+              className="w-full gap-2 text-xs"
             >
-              {loading ? "Generating OTP..." : "Send 6-Digit OTP Code"}
+              <span>{loading ? "Generating OTP..." : "Send 6-Digit OTP Code"}</span>
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => {
                 setError("");
                 setAuthMode("password");
               }}
-              className="w-full py-2.5 text-xs font-semibold text-slate-400 hover:text-white transition-colors flex items-center justify-center gap-1.5"
+              className="w-full gap-1.5 text-xs text-muted hover:text-text"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Back to Password Login
-            </button>
+            </Button>
           </form>
         )}
 
-        {/* ── MODE 3: VERIFY EMAIL / SIGN-IN LINK / OTP ──────────────────── */}
+        {/* ── MODE 3: VERIFY OTP ────────────────────────────────────────── */}
         {authMode === "otp_verify" && (
           <form onSubmit={handleVerifyOtp} className="space-y-5">
-            {/* Direct Email Link Notice */}
-            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 space-y-2.5">
-              <div className="flex items-center gap-2 font-bold text-sm text-emerald-400">
-                <Mail className="w-4 h-4 text-emerald-400" />
-                <span>Sign-In Email Sent</span>
+            <div className="p-3.5 rounded-lg bg-ok/10 border border-ok/20 text-xs text-ok space-y-2">
+              <div className="flex items-center gap-2 font-bold text-xs text-ok">
+                <Mail className="w-4 h-4 text-ok" />
+                <span>Verification Email Sent</span>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Supabase has sent a secure authentication email to <strong className="text-white">{email}</strong> with the subject: <span className="text-amber-400 font-semibold">&quot;Your sign-in link&quot;</span>.
+              <p className="text-xs text-text leading-relaxed">
+                A verification code or sign-in link has been sent to <strong>{email}</strong>.
               </p>
-              <div className="p-2.5 rounded-xl bg-slate-950/60 border border-emerald-500/30 text-[11px] text-emerald-300 space-y-1">
-                <p>👉 <strong>Instant Login:</strong> Open the email and click the <strong>&quot;Log In&quot;</strong> button to enter GOV-DASH immediately.</p>
-              </div>
-              <div className="pt-1">
-                <a
-                  href="https://mail.google.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-sm"
-                >
-                  <span>Open Gmail</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </a>
-              </div>
             </div>
 
-            {/* Alternative: 6-Digit Code Input */}
-            <div className="space-y-2.5 pt-1">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-slate-300">
-                  Or enter 6-digit verification code:
-                </label>
-              </div>
+            <div className="space-y-2 pt-1">
+              <label className="text-xs font-semibold text-text block">
+                Enter 6-digit verification code:
+              </label>
 
-              {/* 6 Individual Numeric Boxes */}
               <div className="flex justify-between items-center gap-2" onPaste={handleOtpPaste}>
                 {otp.map((digit, idx) => (
                   <input
@@ -444,47 +400,46 @@ export default function LoginPage() {
                     value={digit}
                     onChange={(e) => handleOtpChange(idx, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                    className="w-12 h-14 text-center text-xl font-extrabold text-white bg-slate-950/90 border border-slate-700 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 transition-all font-mono"
+                    className="w-12 h-14 text-center text-xl font-extrabold text-text bg-surface-2 border border-border rounded-lg focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent font-mono"
                   />
                 ))}
               </div>
             </div>
 
-            {/* Optional New Password Setting */}
-            <div className="space-y-1 pt-1">
-              <label className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
-                <Lock className="w-3 h-3 text-slate-500" /> New Password (Optional)
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted flex items-center gap-1">
+                <Lock className="w-3.5 h-3.5 text-muted" /> New Password (Optional)
               </label>
               <input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Set a new password if desired"
-                className="w-full px-3.5 py-2 rounded-xl bg-slate-950/70 border border-slate-800 text-white placeholder-slate-600 text-xs focus:outline-none focus:border-blue-500"
+                className="w-full px-3.5 py-2 rounded-lg bg-surface-2 border border-border text-text placeholder:text-muted text-xs focus:outline-none focus:border-accent min-h-[44px]"
               />
             </div>
 
             {error && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-center">
+              <div className="p-3 rounded-lg bg-danger/10 border border-danger/20 text-danger text-xs text-center font-medium">
                 {error}
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
+              variant="primary"
               disabled={loading}
-              className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50"
+              className="w-full gap-2 text-xs"
             >
-              {loading ? "Verifying Code..." : "Verify Code & Enter GOV-DASH"}
+              <span>{loading ? "Verifying Code..." : "Verify Code & Enter"}</span>
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </Button>
 
-            {/* Resend and Navigation */}
             <div className="flex items-center justify-between text-xs pt-1">
               <button
                 type="button"
                 onClick={() => setAuthMode("otp_request")}
-                className="text-slate-400 hover:text-white transition-colors flex items-center gap-1"
+                className="text-muted hover:text-text transition-colors flex items-center gap-1 min-h-[44px]"
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Change Email
               </button>
@@ -493,39 +448,39 @@ export default function LoginPage() {
                 type="button"
                 disabled={!canResend}
                 onClick={handleSendOtp}
-                className={`font-semibold flex items-center gap-1 transition-colors ${
-                  canResend ? "text-blue-400 hover:text-blue-300 cursor-pointer" : "text-slate-500 cursor-not-allowed"
+                className={`font-semibold flex items-center gap-1 transition-colors min-h-[44px] ${
+                  canResend ? "text-accent cursor-pointer" : "text-muted cursor-not-allowed"
                 }`}
               >
                 <RotateCw className={`w-3.5 h-3.5 ${countdown > 0 ? "animate-spin" : ""}`} />
-                {canResend ? "Resend OTP" : `Resend in ${countdown}s`}
+                <span>{canResend ? "Resend OTP" : `Resend in ${countdown}s`}</span>
               </button>
             </div>
           </form>
         )}
 
-        {/* ── Guest Explore Option ────────────────────────────────────────── */}
-        <div className="mt-5 pt-4 border-t border-slate-800/80 text-center">
+        {/* Guest Explore Option */}
+        <div className="mt-5 pt-4 border-t border-border text-center">
           <button
             type="button"
             onClick={handleGuestAccess}
-            className="text-xs font-semibold text-slate-400 hover:text-white transition-colors flex items-center justify-center gap-1.5 mx-auto"
+            className="text-xs font-semibold text-muted hover:text-text transition-colors flex items-center justify-center gap-1.5 mx-auto min-h-[44px] focus:outline-none focus:ring-2 focus:ring-accent px-3 py-2 rounded-lg"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <Sparkles className="w-3.5 h-3.5 text-warn" />
             <span>Explore as Guest (No Registration Needed)</span>
           </button>
         </div>
 
         {/* Footer */}
-        <div className="mt-5 text-center">
-          <p className="text-xs text-slate-400">
+        <div className="mt-4 text-center">
+          <p className="text-xs text-muted">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-bold text-blue-400 hover:text-blue-300 transition-colors">
+            <Link href="/signup" className="font-bold text-accent hover:underline">
               Create an account
             </Link>
           </p>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

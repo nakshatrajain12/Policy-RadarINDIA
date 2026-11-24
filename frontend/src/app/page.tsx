@@ -86,6 +86,26 @@ export default function Home() {
     } catch {}
   }, [showNotificationDrawer]);
 
+  // Support direct deep linking via ?tab= parameter
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab && ["dashboard", "roadmap", "schemes", "analytics", "stories", "compliance", "alerts"].includes(tab)) {
+        setActiveTab(tab as NavTab);
+      }
+      if (params.get("copilot") === "true") {
+        setShowCopilot(true);
+      }
+      if (params.get("onepager") === "true") {
+        setShowOnePagerModal(true);
+      }
+      if (params.get("wizard") === "true") {
+        setShowRoadmapWizard(true);
+      }
+    }
+  }, []);
+
   const unreadAlertsCount = useMemo(() => {
     return notificationsData.filter(n => !readNotifIds.has(n.id)).length;
   }, [readNotifIds]);

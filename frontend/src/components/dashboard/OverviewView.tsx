@@ -24,7 +24,8 @@ import {
   Microscope,
   HeartHandshake,
   Search,
-  Filter
+  Filter,
+  Download
 } from "lucide-react";
 import { 
   BarChart, 
@@ -252,6 +253,71 @@ export function OverviewView({
     }).length;
     return Math.max(count, 4); // Grounded minimum live calls
   }, [filteredRecommendations]);
+
+  const handleExportXLS = () => {
+    const escapeXml = (val: any) => {
+      if (val === null || val === undefined) return "";
+      return String(val)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    };
+
+    const headers = [
+      "Scheme Name", "Nodal Ministry / Agency", "Funding Type", 
+      "Max Ticket (INR)", "Match Score (%)", "Geographic Scope", "Reason / Alignment"
+    ];
+
+    const xmlRows = filteredRecommendations.map((s) => {
+      return `<Row>
+        <Cell><Data ss:Type="String">${escapeXml(s.name)}</Data></Cell>
+        <Cell><Data ss:Type="String">${escapeXml(s.ministry || "Government Department")}</Data></Cell>
+        <Cell><Data ss:Type="String">${escapeXml(s.funding_type || "Capital Support")}</Data></Cell>
+        <Cell><Data ss:Type="Number">${s.max_funding_amount || 0}</Data></Cell>
+        <Cell><Data ss:Type="Number">${s.match_score || 80}</Data></Cell>
+        <Cell><Data ss:Type="String">${escapeXml(s.geographic_restriction || "Pan-India")}</Data></Cell>
+        <Cell><Data ss:Type="String">${escapeXml(s.reason || "")}</Data></Cell>
+      </Row>`;
+    });
+
+    const xmlContent = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="11"/>
+  </Style>
+  <Style ss:ID="HeaderStyle">
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#1E3A8A" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Matching Schemes">
+  <Table>
+   <Row ss:StyleID="HeaderStyle">
+     ${headers.map(h => `<Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`).join("")}
+   </Row>
+   ${xmlRows.join("")}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+    const blob = new Blob([xmlContent], { type: "application/vnd.ms-excel;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `GOV-DASH_${(profile.startupName || "Startup").replace(/\\s+/g, "_")}_Schemes_${new Date().toISOString().slice(0, 10)}.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   // ── 6. Funding Breakdown Chart Data ──────────────────────────────────────
   const instrumentChartData = useMemo(() => {
@@ -695,6 +761,15 @@ export function OverviewView({
           </h2>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleExportXLS}
+              className="text-xs"
+            >
+              <Download className="w-3.5 h-3.5 mr-1 text-ok" />
+              Download Excel
+            </Button>
             <Button
               variant="secondary"
               size="sm"

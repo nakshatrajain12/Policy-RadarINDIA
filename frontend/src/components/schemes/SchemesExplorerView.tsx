@@ -152,6 +152,83 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile, onOp
     setCompareList(compareList.filter((s) => s.id !== id));
   };
 
+  const handleExportXLS = () => {
+    const escapeXml = (val: any) => {
+      if (val === null || val === undefined) return "";
+      return String(val)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    };
+
+    const headers = [
+      "ID", "Scheme Name", "Nodal Ministry / Agency", "Grant Type & Category", 
+      "Max Individual Ticket", "Max Funding (INR)", "Sector Eligibility", 
+      "Startup Stages", "Geographic Scope", "DPIIT Required", "Required Documents Checklist",
+      "Application Deadline", "Processing Timeline", "Application Portal", "Gazette Reference"
+    ];
+
+    const xmlRows = filteredSchemes.map((s) => {
+      const details = formatSchemeGrantDetails(s);
+      const docs = Array.isArray(s.required_documents) ? s.required_documents.join("; ") : "Standard KYC & Business Plan";
+      return `<Row>
+        <Cell><Data ss:Type="String">${escapeXml(s.id || "")}</Data></Cell>
+        <Cell><Data ss:Type="String">${escapeXml(s.scheme_name)}</Data></Cell>
+        <Cell><Data ss:Type="String">${escapeXml(s.ministry || "Government Department")}</Data></Cell>
+        <Cell><Data ss:Type="String">${escapeXml(details.grantTypeBadge || s.funding_type)}</Data></Cell>
+        <Cell><Data ss:Type="String">${escapeXml(details.individualTicket || "")}</Data></Cell>
+        <Cell><Data ss:Type="Number">${s.max_funding_amount || 0}</Data></Cell>
+        <Cell><Data ss:Type="String">${escapeXml(Array.isArray(s.sector_eligibility) ? s.sector_eligibility.join(", ") : s.sector_eligibility || "All Sectors")}</Data></Cell>
+        <Cell><Data ss:Type="String">${escapeXml(Array.isArray(s.startup_stage) ? s.startup_stage.join(", ") : s.startup_stage || "All Stages")}</Data></Cell>
+        <Cell><Data ss:Type="String">${escapeXml(s.geographic_restriction || "Pan-India")}</Data></Cell>
+        <Cell><Data ss:Type="String">${s.dpiit_required ? "Yes" : "No"}</Data></Cell>
+        <Cell><Data ss:Type="String">${escapeXml(docs)}</Data></Cell>
+        <Cell><Data ss:Type="String">${escapeXml(s.application_deadline || "Rolling / Open All Year")}</Data></Cell>
+        <Cell><Data ss:Type="String">${escapeXml(s.processing_timeline || "30-60 Days")}</Data></Cell>
+        <Cell><Data ss:Type="String">${escapeXml(s.application_portal || s.source_url || "")}</Data></Cell>
+        <Cell><Data ss:Type="String">${escapeXml(s.source_url || "")}</Data></Cell>
+      </Row>`;
+    });
+
+    const xmlContent = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="11"/>
+  </Style>
+  <Style ss:ID="HeaderStyle">
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#1E3A8A" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="193 Schemes">
+  <Table>
+   <Row ss:StyleID="HeaderStyle">
+     ${headers.map(h => `<Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`).join("")}
+   </Row>
+   ${xmlRows.join("")}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+    const blob = new Blob([xmlContent], { type: "application/vnd.ms-excel;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `GOV-DASH_Indian_Startup_Schemes_193_${new Date().toISOString().slice(0, 10)}.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handleExportCSV = () => {
     const headers = [
       "Scheme Name",
@@ -259,11 +336,21 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile, onOp
           </div>
 
           <Button
+            variant="primary"
+            onClick={handleExportXLS}
+            className="text-xs"
+          >
+            <Download className="w-3.5 h-3.5 mr-1.5" />
+            Download Excel (.xls)
+          </Button>
+
+          <Button
             variant="secondary"
             onClick={handleExportCSV}
+            className="text-xs"
           >
             <Download className="w-3.5 h-3.5 mr-1.5 text-accent" />
-            Export CSV ({filteredSchemes.length})
+            CSV ({filteredSchemes.length})
           </Button>
         </div>
       </div>

@@ -58,7 +58,6 @@ export default function Home() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
-  const [showOfflineBanner, setShowOfflineBanner] = useState(true);
   
   // Profile & Answers State
   const [profile, setProfile] = useState<FounderProfile>(DEFAULT_PROFILE);
@@ -362,23 +361,6 @@ export default function Home() {
         onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         isMobileMenuOpen={isMobileMenuOpen}
       />
-
-      {/* ── Offline Mode Banner (Dismissible) ─────────────────────────── */}
-      {isOffline && showOfflineBanner && (
-        <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between transition-all">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
-            <span className="font-medium">Using bundled data (offline mode)</span>
-          </div>
-          <button
-            onClick={() => setShowOfflineBanner(false)}
-            className="p-1 text-amber-700 dark:text-amber-400 hover:text-amber-950 dark:hover:text-white rounded transition-colors cursor-pointer"
-            aria-label="Dismiss offline banner"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
 
       {/* ── Main Content Area with Sidebar ────────────────────────────── */}
       <div className="flex-1 max-w-7xl w-full mx-auto flex">

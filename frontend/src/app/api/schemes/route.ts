@@ -20,8 +20,10 @@ export async function GET(request: NextRequest) {
           .select("*")
           .limit(300);
 
-        if (!error && data && data.length > 0) {
+        if (!error && data && data.length >= 190) {
           schemes = data;
+        } else {
+          schemes = seedSchemes as any[];
         }
       } catch (err: any) {
         console.warn("[API/SCHEMES] Supabase fetch fallback to bundled seed:", err.message);

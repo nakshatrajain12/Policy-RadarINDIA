@@ -14,7 +14,6 @@ import { SuccessStoriesView } from "@/components/stories/SuccessStoriesView";
 import { PolicyUpdatesView } from "@/components/alerts/PolicyUpdatesView";
 import { CopilotDrawer } from "@/components/copilot/CopilotDrawer";
 import { FounderProfileModal } from "@/components/profile/FounderProfileModal";
-import { UnlockSimulatorModal } from "@/components/unlock/UnlockSimulatorModal";
 import { StateComplianceGuideModal } from "@/components/compliance/StateComplianceGuideModal";
 import { OnePagerSummaryModal } from "@/components/export/OnePagerSummaryModal";
 import { RoadmapView } from "@/components/roadmap/RoadmapView";
@@ -71,7 +70,7 @@ export default function Home() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedScheme, setSelectedScheme] = useState<Scheme | null>(null);
   const [showCopilot, setShowCopilot] = useState(false);
-  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [copilotInitialScheme, setCopilotInitialScheme] = useState<any | null>(null);
   const [showComplianceModal, setShowComplianceModal] = useState(false);
   const [showOnePagerModal, setShowOnePagerModal] = useState(false);
   const [showRoadmapWizard, setShowRoadmapWizard] = useState(false);
@@ -301,6 +300,11 @@ export default function Home() {
     setActiveTab("roadmap");
   };
 
+  const handleOpenCopilotWithScheme = (scheme: any) => {
+    setCopilotInitialScheme(scheme);
+    setShowCopilot(true);
+  };
+
   // 7. Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -311,8 +315,8 @@ export default function Home() {
       if (e.key === "Escape") {
         setSelectedScheme(null);
         setShowCopilot(false);
+        setCopilotInitialScheme(null);
         setShowProfileModal(false);
-        setShowUnlockModal(false);
         setShowComplianceModal(false);
         setShowOnePagerModal(false);
         setShowRoadmapWizard(false);
@@ -382,9 +386,7 @@ export default function Home() {
         <Sidebar
           activeTab={activeTab}
           onTabChange={(tab) => {
-            if (tab === "unlock") {
-              setShowUnlockModal(true);
-            } else if (tab === "compliance") {
+            if (tab === "compliance") {
               setShowComplianceModal(true);
             } else {
               setActiveTab(tab);
@@ -416,14 +418,14 @@ export default function Home() {
                 onOpenOnePagerModal={() => setShowOnePagerModal(true)}
                 onOpenComplianceModal={() => setShowComplianceModal(true)}
                 onNavigate={(tab) => {
-                  if (tab === "unlock") setShowUnlockModal(true);
-                  else if (tab === "compliance") setShowComplianceModal(true);
+                  if (tab === "compliance") setShowComplianceModal(true);
                   else setActiveTab(tab);
                 }}
                 onBuildRoadmap={() => setActiveTab("roadmap")}
                 onOpenTour={() => setShowTourModal(true)}
                 activePersonaSlug={activePersonaSlug}
                 onSelectPersona={handleSelectDemoPersona}
+                onOpenCopilotWithScheme={handleOpenCopilotWithScheme}
               />
             </ErrorBoundary>
           )}
@@ -452,6 +454,7 @@ export default function Home() {
                 schemes={schemes}
                 onSelectScheme={(s) => setSelectedScheme(s)}
                 userProfile={profile}
+                onOpenCopilotWithScheme={handleOpenCopilotWithScheme}
               />
             </ErrorBoundary>
           )}
@@ -475,7 +478,6 @@ export default function Home() {
                 }}
                 onNavigateTab={(tab) => setActiveTab(tab as NavTab)}
                 onOpenRoadmap={() => setActiveTab("roadmap")}
-                onOpenUnlockSimulator={() => setShowUnlockModal(true)}
                 onSelectScheme={(scheme) => setSelectedScheme(scheme)}
               />
             </ErrorBoundary>
@@ -484,7 +486,16 @@ export default function Home() {
           {/* TAB 5: SUCCESS STORIES */}
           {activeTab === "stories" && (
             <ErrorBoundary tabName="Success Stories">
-              <SuccessStoriesView />
+              <SuccessStoriesView 
+                onSelectSchemeByName={(sName) => {
+                  const found = schemes.find(s => 
+                    s.scheme_name.toLowerCase().includes(sName.toLowerCase()) || 
+                    sName.toLowerCase().includes(s.scheme_name.toLowerCase())
+                  );
+                  if (found) setSelectedScheme(found);
+                  else setActiveTab("schemes");
+                }}
+              />
             </ErrorBoundary>
           )}
 
@@ -535,45 +546,23 @@ export default function Home() {
         scheme={selectedScheme}
         onClose={() => setSelectedScheme(null)}
         userProfile={profile}
+        onOpenCopilot={handleOpenCopilotWithScheme}
       />
 
       {/* 3. AI Copilot Intelligence Drawer */}
       <CopilotDrawer
         isOpen={showCopilot}
-        onClose={() => setShowCopilot(false)}
+        onClose={() => {
+          setShowCopilot(false);
+          setCopilotInitialScheme(null);
+        }}
         userProfile={profile}
+        activeScheme={copilotInitialScheme}
+        onClearActiveScheme={() => setCopilotInitialScheme(null)}
         onNavigateTab={(tab) => setActiveTab(tab as NavTab)}
         onSelectScheme={(schemeId) => {
           const found = schemes.find(s => String(s.id) === String(schemeId) || s.scheme_name === schemeId);
           if (found) setSelectedScheme(found);
-        }}
-      />
-
-      {/* 4. Unlock Simulator Modal */}
-      <UnlockSimulatorModal
-        isOpen={showUnlockModal}
-        onClose={() => setShowUnlockModal(false)}
-        profile={profile}
-        unlockableSchemes={unlockable}
-        onApplyProfileChange={(updated) => {
-          const nextProf = { ...profile, ...updated };
-          setProfile(nextProf);
-          setIntakeAnswers(prev => ({
-            ...prev,
-            startupName: nextProf.startupName || prev.startupName,
-            sector: nextProf.sector || prev.sector,
-            stage: nextProf.stage || prev.stage,
-            state: nextProf.state || prev.state,
-            womenLed: nextProf.womenLed ?? prev.womenLed,
-            documentsHeld: [
-              ...(nextProf.dpiitRegistered ? ["dpiit_cert"] : []),
-              ...(nextProf.entityType === "private_limited" ? ["incorporation"] : []),
-              ...prev.documentsHeld.filter(d => d !== "dpiit_cert" && d !== "incorporation")
-            ]
-          }));
-          try {
-            localStorage.setItem("founder_profile", JSON.stringify(nextProf));
-          } catch {}
         }}
       />
 
@@ -627,9 +616,7 @@ export default function Home() {
       <MobileBottomNav
         activeTab={activeTab}
         onTabChange={(tab) => {
-          if (tab === "unlock") {
-            setShowUnlockModal(true);
-          } else if (tab === "compliance") {
+          if (tab === "compliance") {
             setShowComplianceModal(true);
           } else {
             setActiveTab(tab);

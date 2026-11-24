@@ -11,11 +11,13 @@ import {
   X, 
   Info,
   ShieldCheck,
-  Layers
+  Layers,
+  MessageSquare
 } from "lucide-react";
 import { Scheme, FounderProfile } from "@/types";
 import { SchemeComparisonModal } from "./SchemeComparisonModal";
 import { formatSchemeGrantDetails } from "@/lib/schemeFormatters";
+import { getSchemeMedia } from "@/lib/schemeMedia";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
@@ -24,9 +26,10 @@ interface Props {
   schemes: Scheme[];
   onSelectScheme: (scheme: Scheme) => void;
   userProfile?: FounderProfile;
+  onOpenCopilotWithScheme?: (scheme: Scheme) => void;
 }
 
-export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Props) {
+export function SchemesExplorerView({ schemes, onSelectScheme, userProfile, onOpenCopilotWithScheme }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSector, setSelectedSector] = useState("All");
   const [selectedStage, setSelectedStage] = useState("All");
@@ -410,100 +413,140 @@ export function SchemesExplorerView({ schemes, onSelectScheme, userProfile }: Pr
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredSchemes.map((scheme, idx) => {
             const details = formatSchemeGrantDetails(scheme);
+            const media = getSchemeMedia(scheme);
             const isCompared = compareList.some((s) => s.id === scheme.id);
 
             return (
               <Card
                 key={scheme.id || idx}
                 onClick={() => onSelectScheme(scheme)}
-                className={`group relative p-5 border transition-all cursor-pointer flex flex-col justify-between ${
+                className={`group relative p-0 overflow-hidden border transition-all cursor-pointer flex flex-col justify-between ${
                   isCompared 
                     ? "border-accent bg-accent/5 ring-1 ring-accent" 
                     : "border-border bg-surface hover:border-accent"
                 }`}
               >
                 <div>
-                  {/* Top Badges & Compare Toggle */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <Chip variant="info" size="sm">
+                  {/* Pictorial Header Banner */}
+                  <div className="relative h-28 w-full overflow-hidden bg-surface-raised border-b border-border">
+                    <img 
+                      src={media.coverImage} 
+                      alt={scheme.scheme_name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+
+                    {/* Top Badges over image */}
+                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-accent text-white shadow-xs">
                         {details.grantTypeBadge}
-                      </Chip>
+                      </span>
                       {scheme.dpiit_required ? (
-                        <Chip variant="warn" size="sm">
-                          <ShieldCheck className="w-3 h-3 mr-1" /> DPIIT
-                        </Chip>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500 text-white shadow-xs flex items-center gap-0.5">
+                          <ShieldCheck className="w-3 h-3" /> DPIIT
+                        </span>
                       ) : (
-                        <Chip variant="met" size="sm">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white shadow-xs">
                           Open
-                        </Chip>
+                        </span>
                       )}
                     </div>
 
                     {/* Compare Selection Button */}
-                    <button
-                      type="button"
-                      onClick={(e) => toggleCompare(scheme, e)}
-                      className={`min-h-[44px] flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold transition-colors shrink-0 cursor-pointer ${
-                        isCompared 
-                          ? "bg-accent text-accent-contrast" 
-                          : "bg-surface-2 border border-border text-muted hover:text-text"
-                      }`}
-                      title="Select for side-by-side comparison"
-                    >
-                      {isCompared ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 stroke-[3]" />
-                          <span>Added</span>
-                        </>
-                      ) : (
-                        <>
-                          <Scale className="w-3.5 h-3.5" />
-                          <span>Compare</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="text-sm sm:text-base font-bold text-text group-hover:text-accent transition-colors line-clamp-2 mb-1.5">
-                    {scheme.scheme_name}
-                  </h3>
-
-                  {/* Ministry */}
-                  <p className="text-xs text-muted line-clamp-1 mb-3">
-                    {scheme.ministry || "Central Ministry / State Agency"}
-                  </p>
-
-                  {/* Detailed Funding Breakdown Box */}
-                  <div className="p-3 rounded-lg bg-surface-2 border border-border mb-3 space-y-1">
-                    <div className="text-xs uppercase font-semibold text-muted">
-                      Individual Startup Grant
+                    <div className="absolute top-2.5 right-2.5">
+                      <button
+                        type="button"
+                        onClick={(e) => toggleCompare(scheme, e)}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors shrink-0 cursor-pointer shadow-xs ${
+                          isCompared 
+                            ? "bg-accent text-accent-contrast" 
+                            : "bg-surface/90 backdrop-blur-sm border border-border text-text hover:bg-surface"
+                        }`}
+                        title="Select for side-by-side comparison"
+                      >
+                        {isCompared ? (
+                          <>
+                            <Check className="w-3 h-3 stroke-[3]" />
+                            <span>Added</span>
+                          </>
+                        ) : (
+                          <>
+                            <Scale className="w-3 h-3" />
+                            <span>Compare</span>
+                          </>
+                        )}
+                      </button>
                     </div>
-                    <div className="text-sm font-bold text-ok font-headline leading-tight">
-                      {details.individualTicket}
-                    </div>
-                    {details.macroCeilingDisplay && (
-                      <div className="text-xs text-muted pt-1 border-t border-border">
-                        {details.macroCeilingDisplay}
+
+                    {/* Ministry Emblem Logo */}
+                    <div className="absolute bottom-2 left-2.5 flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-white p-0.5 shadow shrink-0 flex items-center justify-center">
+                        <img src={media.logoUrl} alt="Emblem" className="w-4 h-4 object-contain" />
                       </div>
-                    )}
+                      <span className="text-[11px] font-bold text-white drop-shadow truncate max-w-[200px]">
+                        {media.badgeLabel}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Short Summary */}
-                  <p className="text-xs text-muted line-clamp-2 mb-4 leading-relaxed">
-                    {scheme.nlp_summary || "Comprehensive central and state government financial assistance and support initiative."}
-                  </p>
+                  <div className="p-4 space-y-2.5">
+                    {/* Title */}
+                    <h3 className="text-sm sm:text-base font-bold text-text group-hover:text-accent transition-colors line-clamp-2">
+                      {scheme.scheme_name}
+                    </h3>
+
+                    {/* Ministry */}
+                    <p className="text-xs text-muted line-clamp-1">
+                      {scheme.ministry || "Central Ministry / State Agency"}
+                    </p>
+
+                    {/* Detailed Funding Breakdown Box */}
+                    <div className="p-2.5 rounded-lg bg-surface-2 border border-border space-y-1">
+                      <div className="text-[11px] uppercase font-semibold text-muted">
+                        Individual Startup Grant
+                      </div>
+                      <div className="text-sm font-bold text-ok font-headline leading-tight">
+                        {details.individualTicket}
+                      </div>
+                      {details.macroCeilingDisplay && (
+                        <div className="text-[11px] text-muted pt-1 border-t border-border">
+                          {details.macroCeilingDisplay}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Short Summary */}
+                    <p className="text-xs text-muted line-clamp-2 leading-relaxed">
+                      {scheme.nlp_summary || "Comprehensive central and state government financial assistance and support initiative."}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Footer */}
-                <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted">
-                  <span className="truncate max-w-[140px]">
+                <div className="p-4 pt-2 border-t border-border flex items-center justify-between text-xs text-muted">
+                  <span className="truncate max-w-[140px] text-[11px]">
                     📍 {scheme.geographic_restriction || "Pan-India"}
                   </span>
-                  <span className="font-semibold text-accent group-hover:underline flex items-center gap-1">
-                    View Dossier →
-                  </span>
+
+                  <div className="flex items-center gap-3">
+                    {onOpenCopilotWithScheme && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenCopilotWithScheme(scheme);
+                        }}
+                        className="inline-flex items-center gap-1 font-semibold text-accent hover:underline text-xs cursor-pointer"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Ask AI</span>
+                      </button>
+                    )}
+                    <span className="font-semibold text-text group-hover:text-accent flex items-center gap-1">
+                      Dossier →
+                    </span>
+                  </div>
                 </div>
               </Card>
             );

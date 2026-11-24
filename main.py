@@ -49,22 +49,26 @@ def get_supabase():
     return _supabase_client
 
 def get_schemes_dataset() -> List[Dict[str, Any]]:
-    """Retrieve schemes from Supabase, or fall back to verified bundled seed schemes if Supabase is offline/empty."""
+    """Retrieve schemes from Supabase (if full dataset >= 190), or fall back to verified bundled seed schemes."""
+    seed_path = os.path.join(os.path.dirname(__file__), "frontend", "src", "data", "schemes_seed.json")
+    seed_data = []
+    if os.path.exists(seed_path):
+        try:
+            with open(seed_path, "r", encoding="utf-8") as f:
+                seed_data = json.load(f)
+        except Exception as e:
+            print(f"[SEED] Error loading seed schemes: {e}")
+
     try:
-        res = safe_query(lambda sb: sb.table("schemes_clean").select("*").execute())
+        res = safe_query(lambda sb: sb.table("schemes_clean").select("*").limit(1000).execute())
         data = res.data or []
-        if data:
+        if data and len(data) >= len(seed_data):
             return data
     except Exception:
         pass
     
-    seed_path = os.path.join(os.path.dirname(__file__), "frontend", "src", "data", "schemes_seed.json")
-    if os.path.exists(seed_path):
-        try:
-            with open(seed_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"[SEED] Error loading seed schemes: {e}")
+    if seed_data:
+        return seed_data
     return []
 
 def safe_query(query_fn, fallback=None):

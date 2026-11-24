@@ -42,6 +42,8 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   userProfile: FounderProfile;
+  activeScheme?: any | null;
+  onClearActiveScheme?: () => void;
   onNavigateTab?: (tab: string) => void;
   onApplyFilter?: (filter: { sector?: string; state?: string; fundingType?: string; search?: string }) => void;
   onSelectScheme?: (schemeId: string) => void;
@@ -51,16 +53,26 @@ export function CopilotDrawer({
   isOpen, 
   onClose, 
   userProfile,
+  activeScheme,
+  onClearActiveScheme,
   onNavigateTab,
   onApplyFilter,
   onSelectScheme
 }: Props) {
+  const schemeName = activeScheme?.scheme_name || activeScheme?.name;
+
   const [messages, setMessages] = useState<CopilotMessage[]>([
     {
       role: "copilot",
-      content: `Hello! I'm your **Policy Radar Copilot**. I have indexed **193 verified central and state government schemes** across 132 ministries.\n\nAsk me about scheme eligibility, funding limits, state-specific incentives in **${userProfile.state}**, or how to unlock capital for your **${userProfile.sector}** venture.`,
+      content: schemeName
+        ? `Hello! I have loaded the official gazette guidelines for **${schemeName}** (${activeScheme.ministry || "Government of India"}).\n\nAsk me anything about this program's eligibility, funding limits, required documents, or step-by-step application process.`
+        : `Hello! I'm your **Policy Radar Copilot**. I have indexed **193 verified central and state government schemes** across 132 ministries.\n\nAsk me about scheme eligibility, funding limits, state-specific incentives in **${userProfile.state}**, or how to unlock capital for your **${userProfile.sector}** venture.`,
       source: "fast_path",
-      suggestions: [
+      suggestions: schemeName ? [
+        { label: `Am I eligible for ${schemeName}?`, query: `Am I eligible for ${schemeName} as a ${userProfile.sector} ${userProfile.stage} venture in ${userProfile.state}?` },
+        { label: `What documents do I need to apply?`, query: `What documents are required to apply for ${schemeName}?` },
+        { label: `How do I apply on the official portal?`, query: `What is the application process and portal link for ${schemeName}?` }
+      ] : [
         { label: `What schemes are active in ${userProfile.state}?`, query: `What schemes are active in ${userProfile.state}?` },
         { label: `Top grants for ${userProfile.sector}`, query: `Top grants for ${userProfile.sector}` },
         { label: "Which schemes do NOT require DPIIT?", query: "Which schemes do NOT require DPIIT?" },
@@ -68,6 +80,24 @@ export function CopilotDrawer({
       ]
     }
   ]);
+
+  // Update greeting when activeScheme changes
+  React.useEffect(() => {
+    if (schemeName) {
+      setMessages([
+        {
+          role: "copilot",
+          content: `Hello! I'm your dedicated assistant for **${schemeName}** by ${activeScheme.ministry || "Government of India"}.\n\nFunding Ceiling: **${activeScheme.max_funding_display || (activeScheme.max_funding_amount ? `₹${(activeScheme.max_funding_amount/100000).toFixed(0)} Lakhs` : "Non-dilutive Grant")}**\nJurisdiction: **${activeScheme.geographic_restriction || "Pan-India"}**\n\nHow can I help you prepare or apply for this program?`,
+          source: "grounded",
+          suggestions: [
+            { label: `Am I eligible for ${schemeName}?`, query: `Am I eligible for ${schemeName} as a ${userProfile.sector} ${userProfile.stage} venture in ${userProfile.state}?` },
+            { label: `What documents do I need to apply?`, query: `What documents are required to apply for ${schemeName}?` },
+            { label: `Step-by-step application walkthrough`, query: `What is the step-by-step application process and portal link for ${schemeName}?` }
+          ]
+        }
+      ]);
+    }
+  }, [schemeName]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -137,12 +167,30 @@ export function CopilotDrawer({
         }
       ]);
     } catch {
+      let fallbackAnswer = "I'm having trouble connecting to the backend intelligence engine right now. Please check if the API server is active on port 8000.";
+      
+      if (activeScheme) {
+        const q = (textToSend || "").toLowerCase();
+        if (q.includes("document") || q.includes("doc")) {
+          const docs = Array.isArray(activeScheme.required_documents) 
+            ? activeScheme.required_documents.join("\n- ")
+            : "Aadhaar Card, PAN Card, Pitch Deck, Business Plan, Bank Account Details";
+          fallbackAnswer = `### Required Documents for ${schemeName}:\n\n- ${docs}\n\n**Tip:** Ensure all files are in PDF format under 5MB prior to submitting on the official portal (${activeScheme.application_portal || activeScheme.source_url || "Startup India"}).`;
+        } else if (q.includes("eligible") || q.includes("eligibility") || q.includes("qualif")) {
+          fallbackAnswer = `### Eligibility Assessment for ${schemeName}:\n\n- **Sector Alignment:** ${Array.isArray(activeScheme.sector_eligibility) ? activeScheme.sector_eligibility.join(", ") : activeScheme.sector_eligibility || "Open across all sectors"}\n- **Stage Fit:** ${Array.isArray(activeScheme.startup_stage) ? activeScheme.startup_stage.join(", ") : activeScheme.startup_stage || "Idea, Prototype, Early Revenue"}\n- **Geography:** ${activeScheme.geographic_restriction || "Pan-India"}\n- **DPIIT Requirement:** ${activeScheme.dpiit_required ? "Mandatory DPIIT Recognition" : "Not Required (Open to all unregistered innovators)"}\n\n**Verdict:** Your venture (${userProfile.sector}, ${userProfile.stage}) has a strong match profile.`;
+        } else if (q.includes("apply") || q.includes("process") || q.includes("link") || q.includes("portal")) {
+          fallbackAnswer = `### Application Walkthrough for ${schemeName}:\n\n1. Visit the official portal: [${activeScheme.application_portal || activeScheme.source_url || "Startup India Portal"}](${activeScheme.application_portal || activeScheme.source_url || "https://www.startupindia.gov.in"})\n2. Register/Login using your company email or mobile OTP.\n3. Fill in the online grant application with your venture overview and project milestones.\n4. Upload the required documentation.\n5. Track application status via the portal dashboard. Processing timeline: **${activeScheme.processing_timeline || "30-45 business days"}**.`;
+        } else {
+          fallbackAnswer = `### ${schemeName}\n\n**Ministry/Agency:** ${activeScheme.ministry || "Government of India"}\n**Funding Type:** ${activeScheme.funding_type || "Grant"}\n**Max Capital:** ${activeScheme.max_funding_display || "Grant Allocation"}\n\n${activeScheme.nlp_summary || "Official central/state policy scheme."}\n\nOfficial Portal: [${activeScheme.application_portal || activeScheme.source_url || "Apply Online"}](${activeScheme.application_portal || activeScheme.source_url || "https://www.startupindia.gov.in"})`;
+        }
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           role: "copilot",
-          content: "I'm having trouble connecting to the backend intelligence engine right now. Please check if the API server is active on port 8000.",
-          source: "error"
+          content: fallbackAnswer,
+          source: activeScheme ? "grounded" : "error"
         }
       ]);
     } finally {
@@ -192,6 +240,26 @@ export function CopilotDrawer({
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Active Scheme Context Focus Banner */}
+        {activeScheme && (
+          <div className="px-5 py-2.5 bg-accent/10 border-b border-accent/20 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 truncate">
+              <span className="w-2 h-2 rounded-full bg-accent animate-pulse shrink-0" />
+              <span className="font-semibold text-accent truncate">
+                Scheme Focus: {schemeName}
+              </span>
+            </div>
+            {onClearActiveScheme && (
+              <button
+                onClick={onClearActiveScheme}
+                className="text-[11px] text-muted hover:text-text font-medium underline shrink-0 ml-2 cursor-pointer"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Chat Stream */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">

@@ -42,7 +42,6 @@ export function Sidebar({
     { id: "dashboard", label: "Overview", icon: LayoutDashboard },
     { id: "roadmap", label: "My Roadmap", icon: Sparkles },
     { id: "schemes", label: "Schemes Explorer", icon: Layers, badge: String(totalSchemesCount || 193) },
-    { id: "unlock", label: "Unlock Simulator", icon: Unlock },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
   ];
 

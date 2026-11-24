@@ -297,7 +297,11 @@ export function generatePersonalizedRoadmap(
             "Proof of Business Registration / Pan Card",
             "Detailed Budget Utilization & Milestone Plan"
           ],
-      actionUrl: s.application_portal || s.source_url || "https://www.startupindia.gov.in",
+      actionUrl: (s.application_portal && s.application_portal.startsWith("http"))
+        ? s.application_portal
+        : (s.source_url && s.source_url.startsWith("http"))
+        ? s.source_url
+        : "https://www.startupindia.gov.in",
       portalName: s.application_portal ? "Official Scheme Application Portal" : "Startup India Unified Portal",
       estimatedTime: s.processing_timeline || (item.targetPhase === "now" ? "2 - 3 Weeks" : item.targetPhase === "next" ? "4 - 8 Weeks" : "8 - 12 Weeks"),
       deadline: s.application_deadline || "Rolling / Open All Year",

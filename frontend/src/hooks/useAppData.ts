@@ -154,6 +154,7 @@ export function computeLocalRecommendations(
       };
 
       const matchObj: RecommendationMatch = {
+        ...(s as any),
         id: s.id || `match-${directMatches.length + unlockableMatches.length}`,
         name: sName,
         ministry: s.ministry || "Government of India",
@@ -166,6 +167,10 @@ export function computeLocalRecommendations(
         geographic_restriction: s.geographic_restriction || "Pan India",
         source_url: s.source_url || "https://www.startupindia.gov.in",
         application_portal: s.application_portal || s.source_url || "https://www.startupindia.gov.in",
+        sector_eligibility: s.sector_eligibility,
+        startup_stage: s.startup_stage,
+        dpiit_required: s.dpiit_required,
+        application_deadline: (s as any).application_deadline,
         reason: s.nlp_summary 
           ? s.nlp_summary.slice(0, 140) + "..."
           : `Matched for ${profile.sector} at ${profile.stage} stage in ${profile.state}.`,
@@ -590,10 +595,23 @@ export function useAppData(profile: FounderProfile) {
     })();
 
     const fetchAnalyticsPromise = (async (): Promise<AnalyticsBundle> => {
+      const activeList = schemesRef.current && schemesRef.current.length >= 190 
+        ? schemesRef.current 
+        : (seedSchemes as unknown as Scheme[]);
+      const localAnalytics = computeLocalAnalytics(activeList);
+
       if (!apiBase) {
-        throw new Error("NEXT_PUBLIC_API_URL not configured");
+        return localAnalytics;
       }
-      return await fetchJson<AnalyticsBundle>(`${apiBase}/analytics/bundle`, undefined, 8000, 1);
+      try {
+        const remote = await fetchJson<AnalyticsBundle>(`${apiBase}/analytics/bundle`, undefined, 8000, 1);
+        if (remote && ((remote as any).total_schemes || remote.summary?.total_schemes || 0) >= 190) {
+          return remote;
+        }
+      } catch {
+        // Fall back to complete local 193 schemes
+      }
+      return localAnalytics;
     })();
 
     // Parallel fetch via Promise.allSettled
@@ -746,21 +764,25 @@ export function useAppData(profile: FounderProfile) {
       }
       try {
         const data = await fetchJson<AnalyticsBundle>(`${apiBase}/analytics/bundle`, undefined, 8000, 1);
-        setAnalyticsState({
-          status: "ready",
-          data,
-          error: null,
-          isLocalFallback: false
-        });
+        if (data && ((data as any).total_schemes || data.summary?.total_schemes || 0) >= 190) {
+          setAnalyticsState({
+            status: "ready",
+            data,
+            error: null,
+            isLocalFallback: false
+          });
+          return;
+        }
       } catch (err: unknown) {
-        const localAnalytics = computeLocalAnalytics(schemesRef.current);
-        setAnalyticsState({
-          status: "ready",
-          data: localAnalytics,
-          error: err instanceof Error ? err.message : "Analytics API error",
-          isLocalFallback: true
-        });
+        // Fall back below
       }
+      const localAnalytics = computeLocalAnalytics(schemesRef.current);
+      setAnalyticsState({
+        status: "ready",
+        data: localAnalytics,
+        error: null,
+        isLocalFallback: true
+      });
     }
   }, [profile]);
 

@@ -185,3 +185,4 @@ export function getSchemeMedia(scheme: {
     accentColor: badge.color
   };
 }
+
